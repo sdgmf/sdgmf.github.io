@@ -1,10 +1,10 @@
 ---
-title: GO语言项目应该怎么写
+title: GO语言项目应该怎么写?
 date: 2019-07-24T15:16:41+08:00
 lastmod: 2019-07-24T15:16:41+08:00
 draft: false
-categories: ["glang"]
-tags: ["glang", "dependency inject","unit test","wire","log","errors","互联网项目","微服务"]
+categories: ["golang"]
+tags: ["golang", "dependency inject","unit test","wire","log","errors","微服务"]
 description: GO语言项目应该怎么写
 ---
 
