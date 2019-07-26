@@ -38,7 +38,7 @@ enableEmoji=true
 		#Enable share card
 		shareCard = true
 		#Use custom CSS
-		customCSS = []
+		customCSS = ["/css/highlight.css"]
 
 	#Tags settings
 	[params.tags]
@@ -47,6 +47,11 @@ enableEmoji=true
 	#Categories settings
 	[params.categories]
 		enabled = true
+	[params.utterances]         # utteranc is a comment system based on GitHub issues. see https://utteranc.es
+		owner = "sdgmf" # github用户名
+		repo = "sdgmf.github.io"    # 仓库地址The repo to store comments
+		issueTerm = "pathname"  
+		theme = "github-light"
 [social]
 	email = "smxe.sdgmf@gmail.com"
 	github = "sdgmf"

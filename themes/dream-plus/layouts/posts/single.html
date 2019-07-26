@@ -64,12 +64,10 @@
 				</section>
 			{{ end }}
 
-			{{/*Disqus comments*/}}
-			{{ if $.Site.DisqusShortname }}
-				<div class="ui secondary bottom attached stacked segment disqus">
-					{{ partial "disqus.html" . }}
-				</div>
-			{{ end }}
+		
+
+			{{ partial "comments.html" . }}
+
 		</div>
 	</div>
 {{ end }}
