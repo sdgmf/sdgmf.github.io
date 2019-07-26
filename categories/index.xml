@@ -5,19 +5,9 @@
     <link>https://sdgmf.github.io/categories/</link>
     <description>Recent content in Categories on Sdgmf &#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Wed, 24 Jul 2019 15:16:41 +0800</lastBuildDate>
     
 	<atom:link href="https://sdgmf.github.io/categories/index.xml" rel="self" type="application/rss+xml" />
     
-    
-    <item>
-      <title>golang</title>
-      <link>https://sdgmf.github.io/categories/golang/</link>
-      <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
-      
-      <guid>https://sdgmf.github.io/categories/golang/</guid>
-      <description></description>
-    </item>
     
   </channel>
 </rss>
