@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>wire on UtkarshVerma&#39;s Blog</title>
-    <link>https://dream-plus-posts.netlify.com/tags/wire/</link>
-    <description>Recent content in wire on UtkarshVerma&#39;s Blog</description>
+    <title>wire on Sdgmf &#39;s Blog</title>
+    <link>https://sdgmf.github.io/tags/wire/</link>
+    <description>Recent content in wire on Sdgmf &#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Wed, 24 Jul 2019 15:16:41 +0800</lastBuildDate>
     
-	<atom:link href="https://dream-plus-posts.netlify.com/tags/wire/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://sdgmf.github.io/tags/wire/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>GO语言项目应该怎么写</title>
-      <link>https://dream-plus-posts.netlify.com/posts/goproject/</link>
+      <link>https://sdgmf.github.io/posts/goproject/</link>
       <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
       
-      <guid>https://dream-plus-posts.netlify.com/posts/goproject/</guid>
+      <guid>https://sdgmf.github.io/posts/goproject/</guid>
       <description>Golang容易学上手快这是很多人喜欢Golang的原因，但是用好Golang远没有这么简单。最近面试了很多Golang开发者，其中不乏一些在大厂工作过的同学，但是聊起Go语言如何去开发一个项目，基本都是学习了两周，用了什么mvc框架，就开始开发了。到底如何组织一个Go语言的项目？近几年一直都使用Golang开发项目，借鉴了很多社区的经验后，总结了一套认为还不错的实践经验。
 本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、框架选择等方面介绍Go语言项目的开发经验。
 目的  提供一个完整的go语言项目编程示例 通过示例项目介绍go语言中的编程思想 介绍项目实例遵守的规范  示例项目 Github源码go-project-sample

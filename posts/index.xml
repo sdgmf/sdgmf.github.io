@@ -1,20 +1,20 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Posts on UtkarshVerma&#39;s Blog</title>
-    <link>https://dream-plus-posts.netlify.com/posts/</link>
-    <description>Recent content in Posts on UtkarshVerma&#39;s Blog</description>
+    <title>Posts on Sdgmf &#39;s Blog</title>
+    <link>https://sdgmf.github.io/posts/</link>
+    <description>Recent content in Posts on Sdgmf &#39;s Blog</description>
     <meta name="generator" content="Hugo 0.55.6" />
     <lastBuildDate>Wed, 24 Jul 2019 15:16:41 +0800</lastBuildDate>
     
-        <atom:link href="https://dream-plus-posts.netlify.com/posts/index.xml" rel="self" type="application/rss+xml" />
+        <atom:link href="https://sdgmf.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>GO语言项目应该怎么写</title>
-      <link>https://dream-plus-posts.netlify.com/posts/goproject/</link>
+      <link>https://sdgmf.github.io/posts/goproject/</link>
       <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
       
-      <guid>https://dream-plus-posts.netlify.com/posts/goproject/</guid>
+      <guid>https://sdgmf.github.io/posts/goproject/</guid>
       <description>GO语言项目应该怎么写</description>
     </item>
     
