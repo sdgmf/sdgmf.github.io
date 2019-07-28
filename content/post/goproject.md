@@ -1,5 +1,5 @@
 ---
-title: GO项目示例
+title: 一个Golang项目示例
 date: 2019-07-24T15:16:41+08:00
 lastmod: 2019-07-24T15:16:41+08:00
 draft: false
