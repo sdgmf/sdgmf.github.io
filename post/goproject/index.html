@@ -1,36 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-    <meta name="author" content="Marlon Cabrera Oliveira">
-    <meta name="description" content="Hugo theme using tachyons.io & geomicons.com">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700" rel="stylesheet">
-    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=PT+Sans:400,700,400italic,700italic|PT+Mono&amp;subset=latin,cyrillic">
-    <link rel="stylesheet" href="/css/tachyons.css">
-    <style>
-        .geomicon { width: 1.5em; height: 1.5em; color: #405660; }
-        body{ font-family:'PT Sans', sans-serif; }
-    </style>
-  </head>
-  <body>
-      <header class="tc pal bb b-near-white">
-    <h1 class="f6 thin i link-child"><a href="/">Sdgmf 's Blog</a></h1>
-        <nav>
-          <ul class="list pln">
-            <li class="dib prm"><a href="/">Home</a></li>
-            <li class="dib prm"><a href="/post">Blog</a></li>
-            <li class="dib prm"><a href="/about">About</a></li>
-          </ul>
-        </nav>
-        </header>
 
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <meta name="author" content="Marlon Cabrera Oliveira">
+  <meta name="description" content="Hugo theme using tachyons.io & geomicons.com">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700" rel="stylesheet">
+  <link rel="stylesheet"
+    href="http://fonts.googleapis.com/css?family=PT+Sans:400,700,400italic,700italic|PT+Mono&amp;subset=latin,cyrillic">
+  <link rel="stylesheet" href="/css/tachyons.css">
+  <style>
+    .geomicon {
+      width: 1.5em;
+      height: 1.5em;
+      color: #405660;
+    }
+
+    body {
+      font-family: 'PT Sans', sans-serif;
+    }
+  </style>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
+  </script>
+</head>
+
+<body>
+  <header class="tc pal bb b-near-white">
+    <h1 class="f6 thin i link-child"><a href="/">Sdgmf 's Blog</a></h1>
+    <nav>
+      <ul class="list pln">
+        <li class="dib prm"><a href="/">Home</a></li>
+        <li class="dib prm"><a href="/post">Blog</a></li>
+        <li class="dib prm"><a href="/about">About</a></li>
+      </ul>
+    </nav>
+    <span id="busuanzi_container_site_pv" style='display:none'>
+      本站总访问量<span id="busuanzi_value_site_pv"></span>次
+    </span>
+    <span id="busuanzi_container_site_uv" style='display:none'>
+      本站访客数<span id="busuanzi_value_site_uv"></span>人次
+    </span>
+  </header>
 
   <main class="pal">
 
     <h1>GO项目示例</h1>
     <h2>Jul 24, 2019</h2>
+    <span id="busuanzi_container_page_pv" style='display:none'>
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
       <p>本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、框架选择等方面介绍Go语言项目的开发经验.</p>
 
 <h2 id="目的">目的</h2>
@@ -81,7 +101,7 @@
 <p>同<a href="https://github.com/golang-standards/project-layout">project-layout</a></p>
 
 <blockquote>
-<p>该项目的main方法。 每个应用程序的目录名称应与您要拥有的可执行文件的名称相匹配（例如，/cmd/myapp）。 不要在应用程序目录中放入大量代码。 如果您认为代码可以导入并在其他项目中使用，那么它应该存在于/ pkg目录中。 如果代码不可重用或者您不希望其他人重用它，请将该代码放在/ internal目录中。 你会惊讶于别人会做什么，所以要明确你的意图！ 通常有一个小的main函数可以从/ internal和/ pkg目录中导入和调用代码，而不是其他任何东西。</p>
+<p>&ldquo;该项目的main方法。 每个应用程序的目录名称应与您要拥有的可执行文件的名称相匹配（例如，/cmd/myapp）。 不要在应用程序目录中放入大量代码。 如果您认为代码可以导入并在其他项目中使用，那么它应该存在于/ pkg目录中。 如果代码不可重用或者您不希望其他人重用它，请将该代码放在/ internal目录中。 你会惊讶于别人会做什么，所以要明确你的意图！ 通常有一个小的main函数可以从/ internal和/ pkg目录中导入和调用代码，而不是其他任何东西。&rdquo;</p>
 </blockquote>
 
 <h3 id="internal-pkg">\internal\pkg</h3>
@@ -89,8 +109,7 @@
 <p>同<a href="https://github.com/golang-standards/project-layout">project-layout</a></p>
 
 <blockquote>
-<p>私有应用程序和库代码。 这是您不希望其他人在其应用程序或库中导入的代码。
-将您的实际应用程序代码放在/internal/app目录（例如/internal/app/myapp）和/internal/ pkg目录中这些应用程序共享的代码（例如/internal/pkg/myprivlib）。</p>
+<p>&ldquo;私有应用程序和库代码。 这是您不希望其他人在其应用程序或库中导入的代码。 将您的实际应用程序代码放在/internal/app目录（例如/internal/app/myapp）和/internal/ pkg目录中这些应用程序共享的代码（例如/internal/pkg/myprivlib）。&rdquo;</p>
 </blockquote>
 
 <p>内部的包采用平铺的方式。</p>
@@ -154,24 +173,20 @@
 <p>Golang的开发推崇这样一种显式编程的思想，显式的初始化、方法调用和错误处理.</p>
 
 <ol>
-<li>尽可能不要使用宝级别的全局变量.</li>
+<li>尽可能不要使用包级别的全局变量.</li>
 <li>尽量不要使用init函数，初始化操作可以在main函数中调用，这样方便阅读代码和控制初始化顺序。</li>
 <li>函数都要返回错误，用if err != nil 显式的处理错误.</li>
 <li>依赖的参数让调用者去控制（控制翻转的思想),可以看下节依赖注入。</li>
 </ol>
 
-<p>几个大佬都讨论过这个问题，我就不在重复了，博士Peter的《<a href="http://peter.bourgon.org/blog/2017/06/09/theory-of-modern-go.html">A theory of modern Go</a>》认为魔法代码的核心是”no package level vars; no func init“.单这也不是绝对。
+<p>几个大佬都讨论过这个问题，博士Peter的《<a href="http://peter.bourgon.org/blog/2017/06/09/theory-of-modern-go.html">A theory of modern Go</a>》认为魔法代码的核心是”no package level vars; no func init“.单这也不是绝对。
 Dave Cheny在《<a href="https://dave.cheney.net/2017/06/11/go-without-package-scoped-variables">go-without-package-scoped-variables</a>》做了更详细的说明.</p>
-
-<blockquote>
-<p>虽然这篇文章只是一个思想实验，但很明显禁止所有包范围变量太过严苛，无法作为语言规范使用。从性能的角度来看，解决私人变量使用的定制使用  可能是不切实际的。</p>
-</blockquote>
 
 <h2 id="依赖注入">依赖注入</h2>
 
 <p>Java 程序员都很熟悉依赖注入和控制翻转这种思想，Spring正式基于依赖注入的思想开发。依赖注入的好处是解耦，对象的组装交给容器来控制(选择需要的实现类、是否单例和初始化).基于依赖注入可以很方便的实现单元测试和提高代码可维护性。</p>
 
-<p>关于Golang依赖注入的讨论《<a href="https://blog.drewolson.org/dependency-injection-in-go">Dependency Injection in Go</a>》,Golang依赖注入的Package有 Uber的<a href="https://github.com/uber-go/dig">dig</a>,<a href="https://github.com/uber-go/fx">fx</a>,facebook 的 <a href="https://github.com/facebookarchive/inject">inject</a>,google的<a href="https://github.com/google/wire">wire</a>。dig、fx和inject都是基于反射实现，wire是通过代码生成实现，wire的方式是显式的。</p>
+<p>关于Golang依赖注入的讨论《<a href="https://blog.drewolson.org/dependency-injection-in-go">Dependency Injection in Go</a>》,Golang依赖注入的Package有 Uber的<a href="https://github.com/uber-go/dig">dig</a>,<a href="https://github.com/uber-go/fx">fx</a>,facebook 的 <a href="https://github.com/facebookarchive/inject">inject</a>,google的<a href="https://github.com/google/wire">wire</a>。dig、fx和inject都是基于反射实现，wire是通过代码生成实现，代码生成的方式是显式的。</p>
 
 <p>本示例通过wire来完成依赖注入. 编写wire.go,wire会根据wire.go生成代码。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// +build wireinject
