@@ -8,9 +8,14 @@ pygmentscodefences = true
 # linenos = "table"
 # pygmentscodefencesguesssyntax = true
 # pygmentsUseClassic=true 
+
+googleAnalytics="UA-144729654-1"
+
+
 [params]
 	[params.utterances]         # utteranc is a comment system based on GitHub issues. see https://utteranc.es
 		owner = "sdgmf" # github用户名
 		repo = "sdgmf.github.io"    # 仓库地址The repo to store comments
 		issueTerm = "pathname"  
 		theme = "github-light"
+
