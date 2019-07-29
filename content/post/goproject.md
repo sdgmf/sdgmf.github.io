@@ -27,33 +27,77 @@ Github源码[go-project-sample](http://github.com/sdgmf/go-project-sample)
 
 ```bash
 .
+├── Makefile
+├── README.md
 ├── api
 │   └── proto
-├── builds
+│       ├── products.pb.go
+│       └── products.proto
 ├── cmd
-│   └── app
+│   └── sample
+│       ├── main.go
+│       ├── wire.go
+│       └── wire_gen.go
 ├── configs
-├── deployments
+│   └── app.yml
 ├── dist
 │   └── test
-├── internal
-│   ├── app
-│   │   ├── proxy
-│   │   │   ├── controllers
-│   │   │   └── grpcservers
-│   │   └── tool
-│   │       └── clients
-│   └── pkg
-│       ├── config
-│       ├── database
-│       ├── log
-│       ├── models
-│       ├── repositorys
-│       ├── services
-│       └── transport
-│           ├── grpc
-│           └── http
-└── scripts
+│       └── cover.out
+├── go.mod
+├── go.sum
+└── internal
+    ├── app
+    │   ├── sample
+    │   │   ├── app.go
+    │   │   ├── controllers
+    │   │   │   ├── controllers.go
+    │   │   │   ├── products.go
+    │   │   │   ├── products_test.go
+    │   │   │   ├── wire.go
+    │   │   │   └── wire_gen.go
+    │   │   └── grpcservers
+    │   │       ├── products.go
+    │   │       ├── products_test.go
+    │   │       ├── servers.go
+    │   │       ├── wire.go
+    │   │       └── wire_gen.go
+    │   └── tool
+    │       └── clients
+    │           ├── clients.go
+    │           ├── products.go
+    │           ├── products_test.go.bak
+    │           └── wire.go
+    └── pkg
+        ├── config
+        │   ├── config.go
+        │   └── wire.go
+        ├── database
+        │   └── database.go
+        ├── log
+        │   └── log.go
+        ├── models
+        │   └── product.go
+        ├── repositorys
+        │   ├── cover.out
+        │   ├── mock_ProductsStorage.go
+        │   ├── products.go
+        │   ├── products_test.go
+        │   ├── repositorys.go
+        │   ├── wire.go
+        │   └── wire_gen.go
+        ├── services
+        │   ├── mock_ProductsService.go
+        │   ├── products.go
+        │   ├── products_test.go
+        │   ├── services.go
+        │   ├── wire.go
+        │   └── wire_gen.go
+        └── transport
+            ├── grpc
+            │   └── grpc.go
+            └── http
+                └── http.go
+
 
 ```
 
