@@ -1,69 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-  <meta name="author" content="Marlon Cabrera Oliveira">
-  <meta name="description" content="Hugo theme using tachyons.io & geomicons.com">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700" rel="stylesheet">
-  <link rel="stylesheet"
-    href="//fonts.googleapis.com/css?family=PT+Sans:400,700,400italic,700italic|PT+Mono&amp;subset=latin,cyrillic">
-  <link rel="stylesheet" href="/css/tachyons.css">
-  <style>
-    .geomicon {
-      width: 1.5em;
-      height: 1.5em;
-      color: #405660;
-    }
-
-    body {
-      font-family: 'PT Sans', sans-serif;
-    }
-  </style>
-  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js">
-  </script>
-
-
-
-<script type="application/javascript">
-var doNotTrack = false;
-if (!doNotTrack) {
-	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-	ga('create', 'UA-144729654-1', 'auto');
-	
-	ga('send', 'pageview');
-}
-</script>
-<script async src='https://www.google-analytics.com/analytics.js'></script>
-
-
-</head>
-
-<body>
-  <header class="tc pal bb b-near-white">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="author" content="Marlon Cabrera Oliveira">
+    <meta name="description" content="Hugo theme using tachyons.io & geomicons.com">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700" rel="stylesheet">
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=PT+Sans:400,700,400italic,700italic|PT+Mono&amp;subset=latin,cyrillic">
+    <link rel="stylesheet" href="/css/tachyons.css">
+    <style>
+        .geomicon { width: 1.5em; height: 1.5em; color: #405660; }
+        body{ font-family:'PT Sans', sans-serif; }
+    </style>
+  </head>
+  <body>
+      <header class="tc pal bb b-near-white">
     <h1 class="f6 thin i link-child"><a href="/">Sdgmf 's Blog</a></h1>
-    <nav>
-      <ul class="list pln">
-        <li class="dib prm"><a href="/">Home</a></li>
-        <li class="dib prm"><a href="/post">Blog</a></li>
-        <li class="dib prm"><a href="/about">About</a></li>
-      </ul>
-    </nav>
-   
-  </header>
+        <nav>
+          <ul class="list pln">
+            <li class="dib prm"><a href="/">Home</a></li>
+            <li class="dib prm"><a href="/post">Blog</a></li>
+            <li class="dib prm"><a href="/about">About</a></li>
+          </ul>
+        </nav>
+        </header>
+
 
   <main class="pal">
 
     <h1>一个Golang项目示例</h1>
-    <span id="busuanzi_container_page_pv" style='display:none;'>
-      Jul 24, 2019
-      &nbsp;&nbsp;
-      本文总阅读量<span id="busuanzi_value_page_pv"></span>次.
-    </span>
-   
-
+    <h2>Jul 24, 2019</h2>
       <p>本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、框架选择等方面介绍Go语言项目的开发经验.</p>
 
 <h2 id="目的">目的</h2>
@@ -180,20 +147,6 @@ if (!doNotTrack) {
 <li>层次清晰，代码可读性更高。</li>
 <li>方便单元测试,单元测试往往因为依赖持久的存储而无法进行,如果持久化代码抽取到单独的对象里，这就变的很简单了.</li>
 </ol>
-
-<h2 id="显式编程">显式编程</h2>
-
-<p>Golang的开发推崇这样一种显式编程的思想，显式的初始化、方法调用和错误处理.</p>
-
-<ol>
-<li>尽可能不要使用包级别的全局变量.</li>
-<li>尽量不要使用init函数，初始化操作可以在main函数中调用，这样方便阅读代码和控制初始化顺序。</li>
-<li>函数都要返回错误，用if err != nil 显式的处理错误.</li>
-<li>依赖的参数让调用者去控制（控制翻转的思想),可以看下节依赖注入。</li>
-</ol>
-
-<p>几个大佬都讨论过这个问题，博士Peter的《<a href="http://peter.bourgon.org/blog/2017/06/09/theory-of-modern-go.html">A theory of modern Go</a>》认为魔法代码的核心是”no package level vars; no func init“.单这也不是绝对。
-Dave Cheny在《<a href="https://dave.cheney.net/2017/06/11/go-without-package-scoped-variables">go-without-package-scoped-variables</a>》做了更详细的说明.</p>
 
 <h2 id="依赖注入">依赖注入</h2>
 
@@ -320,6 +273,20 @@ wire ./...</code></pre></div>
 <h2 id="面向接口编程">面向接口编程</h2>
 
 <p>多态和单元测试必须,比较好理解不再解释。</p>
+
+<h2 id="显式编程">显式编程</h2>
+
+<p>Golang的开发推崇这样一种显式编程的思想，显式的初始化、方法调用和错误处理.</p>
+
+<ol>
+<li>尽可能不要使用包级别的全局变量.</li>
+<li>尽量不要使用init函数，初始化操作可以在main函数中调用，这样方便阅读代码和控制初始化顺序。</li>
+<li>函数都要返回错误，用if err != nil 显式的处理错误.</li>
+<li>依赖的参数让调用者去控制（控制翻转的思想),可以看下节依赖注入。</li>
+</ol>
+
+<p>几个大佬都讨论过这个问题，博士Peter的《<a href="http://peter.bourgon.org/blog/2017/06/09/theory-of-modern-go.html">A theory of modern Go</a>》认为魔法代码的核心是”no package level vars; no func init“.单这也不是绝对。
+Dave Cheny在《<a href="https://dave.cheney.net/2017/06/11/go-without-package-scoped-variables">go-without-package-scoped-variables</a>》做了更详细的说明.</p>
 
 <h2 id="打印日志">打印日志</h2>
 
@@ -840,28 +807,18 @@ ok      github.com/zlgwzy/go-project-sample/internal/pkg/repositorys    <span st
 
   </main>
 
-<div class="post bg-white">
-    <script src="https://utteranc.es/client.js"
-          repo="sdgmf/sdgmf.github.io"
-          issue-term="pathname"
-          theme="github-light"
-          crossorigin="anonymous"
-          async>
-    </script>
-    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
-</div>
-
 <footer class="tc center bt b--near-white pvx phm pax-m phxl-l pvx-l">
         <small class="f5 mw7 db center phm lh-copy">
           <nav>
               <ul class="list pln">
-                  <li class="dib prm"><a href="https://www.github.com/sdgmf"><span class="js-geomicon geomicon blue" data-icon="github"></span></a></li>
+                  <li class="dib prm"><a href="https://www.github.com"><span class="js-geomicon geomicon blue" data-icon="github"></span></a></li>
+                  <li class="dib prm"><a href="https://www.twitter.com"><span class="js-geomicon geomicon blue" data-icon="twitter"></span></a></li>
               </ul>
               </nav>
               Copyright-  2015
         </small>
     </footer>
-    <script src="//d2v52k3cl9vedd.cloudfront.net/geomicons/0.2.0/geomicons.min.js.gz"></script>
+    <script src="http://d2v52k3cl9vedd.cloudfront.net/geomicons/0.2.0/geomicons.min.js.gz"></script>
     <script>
         var icons = document.querySelectorAll('.geomicon');
         Geomicons.inject(icons);
