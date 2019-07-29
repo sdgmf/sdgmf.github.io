@@ -121,19 +121,6 @@ MVC、领域模型、ORM 这些都是通过把特定职责的代码拆分到不�
 2. 层次清晰，代码可读性更高。
 3. 方便单元测试,单元测试往往因为依赖持久的存储而无法进行,如果持久化代码抽取到单独的对象里，这就变的很简单了.
 
-## 显式编程
-
-Golang的开发推崇这样一种显式编程的思想，显式的初始化、方法调用和错误处理.
-
-1. 尽可能不要使用包级别的全局变量.
-2. 尽量不要使用init函数，初始化操作可以在main函数中调用，这样方便阅读代码和控制初始化顺序。
-3. 函数都要返回错误，用if err != nil 显式的处理错误.
-4. 依赖的参数让调用者去控制（控制翻转的思想),可以看下节依赖注入。
-
-几个大佬都讨论过这个问题，博士Peter的《[A theory of modern Go](http://peter.bourgon.org/blog/2017/06/09/theory-of-modern-go.html)》认为魔法代码的核心是”no package level vars; no func init“.单这也不是绝对。
-Dave Cheny在《[go-without-package-scoped-variables](https://dave.cheney.net/2017/06/11/go-without-package-scoped-variables)》做了更详细的说明.
-
-
 ## 依赖注入
 
 Java 程序员都很熟悉依赖注入和控制翻转这种思想，Spring正式基于依赖注入的思想开发。依赖注入的好处是解耦，对象的组装交给容器来控制(选择需要的实现类、是否单例和初始化).基于依赖注入可以很方便的实现单元测试和提高代码可维护性。
@@ -273,6 +260,18 @@ var providerSet = wire.NewSet(log.ProviderSet, config.ProviderSet, database.Prov
 ## 面向接口编程
 
 多态和单元测试必须,比较好理解不再解释。
+
+## 显式编程
+
+Golang的开发推崇这样一种显式编程的思想，显式的初始化、方法调用和错误处理.
+
+1. 尽可能不要使用包级别的全局变量.
+2. 尽量不要使用init函数，初始化操作可以在main函数中调用，这样方便阅读代码和控制初始化顺序。
+3. 函数都要返回错误，用if err != nil 显式的处理错误.
+4. 依赖的参数让调用者去控制（控制翻转的思想),可以看下节依赖注入。
+
+几个大佬都讨论过这个问题，博士Peter的《[A theory of modern Go](http://peter.bourgon.org/blog/2017/06/09/theory-of-modern-go.html)》认为魔法代码的核心是”no package level vars; no func init“.单这也不是绝对。
+Dave Cheny在《[go-without-package-scoped-variables](https://dave.cheney.net/2017/06/11/go-without-package-scoped-variables)》做了更详细的说明.
 
 ## 打印日志
 
