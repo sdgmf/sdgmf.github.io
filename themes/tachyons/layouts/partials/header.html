@@ -13,6 +13,9 @@
         .geomicon { width: 1.5em; height: 1.5em; color: #405660; }
         body{ font-family:'PT Sans', sans-serif; }
     </style>
+    {{ if not .Site.BuildDrafts }}
+    {{ template "_internal/google_analytics_async.html" . }}
+    {{ end }}
   </head>
   <body>
       <header class="tc pal bb b-near-white">
