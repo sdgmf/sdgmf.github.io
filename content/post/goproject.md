@@ -39,64 +39,74 @@ Github源码[go-project-sample](http://github.com/sdgmf/go-project-sample)
 │       ├── wire.go
 │       └── wire_gen.go
 ├── configs
-│   └── app.yml
+│   └── sample.yml
 ├── dist
+│   ├── sample-darwin-amd64
+│   ├── sample-linux-amd64
 │   └── test
 │       └── cover.out
+├── docker
+│   └── sample
+│       ├── Dockerfile
+│       └── docker-compose.yml
 ├── go.mod
 ├── go.sum
-└── internal
-    ├── app
-    │   ├── sample
-    │   │   ├── app.go
-    │   │   ├── controllers
-    │   │   │   ├── controllers.go
-    │   │   │   ├── products.go
-    │   │   │   ├── products_test.go
-    │   │   │   ├── wire.go
-    │   │   │   └── wire_gen.go
-    │   │   └── grpcservers
-    │   │       ├── products.go
-    │   │       ├── products_test.go
-    │   │       ├── servers.go
-    │   │       ├── wire.go
-    │   │       └── wire_gen.go
-    │   └── tool
-    │       └── clients
-    │           ├── clients.go
-    │           ├── products.go
-    │           ├── products_test.go.bak
-    │           └── wire.go
-    └── pkg
-        ├── config
-        │   ├── config.go
-        │   └── wire.go
-        ├── database
-        │   └── database.go
-        ├── log
-        │   └── log.go
-        ├── models
-        │   └── product.go
-        ├── repositorys
-        │   ├── cover.out
-        │   ├── mock_ProductsStorage.go
-        │   ├── products.go
-        │   ├── products_test.go
-        │   ├── repositorys.go
-        │   ├── wire.go
-        │   └── wire_gen.go
-        ├── services
-        │   ├── mock_ProductsService.go
-        │   ├── products.go
-        │   ├── products_test.go
-        │   ├── services.go
-        │   ├── wire.go
-        │   └── wire_gen.go
-        └── transport
-            ├── grpc
-            │   └── grpc.go
-            └── http
-                └── http.go
+├── internal
+│   ├── app
+│   │   ├── sample
+│   │   │   ├── app.go
+│   │   │   ├── controllers
+│   │   │   │   ├── controllers.go
+│   │   │   │   ├── products.go
+│   │   │   │   ├── products_test.go
+│   │   │   │   ├── wire.go
+│   │   │   │   └── wire_gen.go
+│   │   │   └── grpcservers
+│   │   │       ├── products.go
+│   │   │       ├── products_test.go
+│   │   │       ├── servers.go
+│   │   │       ├── wire.go
+│   │   │       └── wire_gen.go
+│   │   └── tool
+│   │       └── clients
+│   │           ├── clients.go
+│   │           ├── products.go
+│   │           ├── products_test.go.bak
+│   │           └── wire.go
+│   └── pkg
+│       ├── config
+│       │   ├── config.go
+│       │   └── wire.go
+│       ├── database
+│       │   └── database.go
+│       ├── log
+│       │   └── log.go
+│       ├── models
+│       │   └── product.go
+│       ├── repositorys
+│       │   ├── cover.out
+│       │   ├── mock_ProductsStorage.go
+│       │   ├── products.go
+│       │   ├── products_test.go
+│       │   ├── repositorys.go
+│       │   ├── wire.go
+│       │   └── wire_gen.go
+│       ├── services
+│       │   ├── mock_ProductsService.go
+│       │   ├── products.go
+│       │   ├── products_test.go
+│       │   ├── services.go
+│       │   ├── wire.go
+│       │   └── wire_gen.go
+│       └── transport
+│           ├── grpc
+│           │   └── grpc.go
+│           └── http
+│               └── http.go
+└── scripts
+    ├── sample.sql
+    └── wait-for-it.sh
+
 
 
 ```
@@ -156,6 +166,16 @@ grpc server 实现
 同[project-layout](https://github.com/golang-standards/project-layout)
 
 > OpenAPI/Swagger规范，JSON模式文件，协议定义文件等。
+
+### /scripts
+
+同[project-layout](https://github.com/golang-standards/project-layout)
+
+> sql、部署等脚本
+
+### /docker
+
+> Dockerfile、docker-compose
 
 ## 分层
 
@@ -863,6 +883,8 @@ lint:
 .PHONY: proto
 proto:
     protoc -I api/proto ./api/proto/products.proto --go_out=plugins=grpc:api/proto
+docker: build
+    docker-compose -f docker/sample/docker-compose.yml up
 ```
 
 1. make run 运行项目
@@ -872,7 +894,8 @@ proto:
 5. cover 查看测试用例覆盖度
 6. make build 编译代码
 7. make lint 静态代码检查
-8. proto 生成grpc代码
+8. make proto 生成grpc代码
+9. make docker 通过docker启动项目,包括依赖的数据
 
 ## 框架或库
 
