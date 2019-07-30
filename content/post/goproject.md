@@ -1,11 +1,11 @@
 ---
-title: 一个Golang项目示例
+title: Golang微服务实战
 date: 2019-07-24T15:16:41+08:00
 lastmod: 2019-07-24T15:16:41+08:00
 draft: false
 categories: ["golang"]
 tags: ["golang", "dependency inject","unit test","wire","log","errors","微服务"]
-description: GO语言项目应该怎么写
+description: Golang项目示例
 ---
 
 本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、框架选择等方面介绍Go语言项目的开发经验.
