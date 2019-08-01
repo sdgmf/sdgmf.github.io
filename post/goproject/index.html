@@ -19,7 +19,7 @@
 var doNotTrack = false;
 if (!doNotTrack) {
 	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-	ga('create', 'UA-144729654-1', 'auto');
+	ga('create', 'UA-144925501-1', 'auto');
 	
 	ga('send', 'pageview');
 }
@@ -75,64 +75,73 @@ if (!doNotTrack) {
 │       ├── wire.go
 │       └── wire_gen.go
 ├── configs
-│   └── app.yml
+│   └── sample.yml
 ├── dist
+│   ├── sample-darwin-amd64
+│   ├── sample-linux-amd64
 │   └── test
 │       └── cover.out
+├── docker
+│   └── sample
+│       ├── Dockerfile
+│       └── docker-compose.yml
 ├── go.mod
 ├── go.sum
-└── internal
-    ├── app
-    │   ├── sample
-    │   │   ├── app.go
-    │   │   ├── controllers
-    │   │   │   ├── controllers.go
-    │   │   │   ├── products.go
-    │   │   │   ├── products_test.go
-    │   │   │   ├── wire.go
-    │   │   │   └── wire_gen.go
-    │   │   └── grpcservers
-    │   │       ├── products.go
-    │   │       ├── products_test.go
-    │   │       ├── servers.go
-    │   │       ├── wire.go
-    │   │       └── wire_gen.go
-    │   └── tool
-    │       └── clients
-    │           ├── clients.go
-    │           ├── products.go
-    │           ├── products_test.go.bak
-    │           └── wire.go
-    └── pkg
-        ├── config
-        │   ├── config.go
-        │   └── wire.go
-        ├── database
-        │   └── database.go
-        ├── log
-        │   └── log.go
-        ├── models
-        │   └── product.go
-        ├── repositorys
-        │   ├── cover.out
-        │   ├── mock_ProductsStorage.go
-        │   ├── products.go
-        │   ├── products_test.go
-        │   ├── repositorys.go
-        │   ├── wire.go
-        │   └── wire_gen.go
-        ├── services
-        │   ├── mock_ProductsService.go
-        │   ├── products.go
-        │   ├── products_test.go
-        │   ├── services.go
-        │   ├── wire.go
-        │   └── wire_gen.go
-        └── transport
-            ├── grpc
-            │   └── grpc.go
-            └── http
-                └── http.go</code></pre></div>
+├── internal
+│   ├── app
+│   │   ├── sample
+│   │   │   ├── app.go
+│   │   │   ├── controllers
+│   │   │   │   ├── controllers.go
+│   │   │   │   ├── products.go
+│   │   │   │   ├── products_test.go
+│   │   │   │   ├── wire.go
+│   │   │   │   └── wire_gen.go
+│   │   │   └── grpcservers
+│   │   │       ├── products.go
+│   │   │       ├── products_test.go
+│   │   │       ├── servers.go
+│   │   │       ├── wire.go
+│   │   │       └── wire_gen.go
+│   │   └── tool
+│   │       └── clients
+│   │           ├── clients.go
+│   │           ├── products.go
+│   │           ├── products_test.go.bak
+│   │           └── wire.go
+│   └── pkg
+│       ├── config
+│       │   ├── config.go
+│       │   └── wire.go
+│       ├── database
+│       │   └── database.go
+│       ├── log
+│       │   └── log.go
+│       ├── models
+│       │   └── product.go
+│       ├── repositorys
+│       │   ├── cover.out
+│       │   ├── mock_ProductsStorage.go
+│       │   ├── products.go
+│       │   ├── products_test.go
+│       │   ├── repositorys.go
+│       │   ├── wire.go
+│       │   └── wire_gen.go
+│       ├── services
+│       │   ├── mock_ProductsService.go
+│       │   ├── products.go
+│       │   ├── products_test.go
+│       │   ├── services.go
+│       │   ├── wire.go
+│       │   └── wire_gen.go
+│       └── transport
+│           ├── grpc
+│           │   └── grpc.go
+│           └── http
+│               └── http.go
+└── scripts
+    ├── sample.sql
+    └── wait-for-it.sh</code></pre></div>
 <h3 id="cmd">\cmd</h3>
 
 <p>同<a href="https://github.com/golang-standards/project-layout">project-layout</a></p>
@@ -193,6 +202,20 @@ if (!doNotTrack) {
 
 <blockquote>
 <p>OpenAPI/Swagger规范，JSON模式文件，协议定义文件等。</p>
+</blockquote>
+
+<h3 id="scripts">/scripts</h3>
+
+<p>同<a href="https://github.com/golang-standards/project-layout">project-layout</a></p>
+
+<blockquote>
+<p>sql、部署等脚本</p>
+</blockquote>
+
+<h3 id="docker">/docker</h3>
+
+<blockquote>
+<p>Dockerfile、docker-compose</p>
 </blockquote>
 
 <h2 id="分层">分层</h2>
@@ -834,6 +857,8 @@ ok      github.com/zlgwzy/go-project-sample/internal/pkg/repositorys    <span st
 <span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> proto
 <span style="color:#a6e22e">proto</span><span style="color:#f92672">:</span>
     protoc -I api/proto ./api/proto/products.proto --go_out<span style="color:#f92672">=</span>plugins<span style="color:#f92672">=</span>grpc:api/proto
+<span style="color:#a6e22e">docker</span><span style="color:#f92672">:</span> build
+    docker-compose -f docker/sample/docker-compose.yml up
 </code></pre></div>
 <ol>
 <li>make run 运行项目</li>
@@ -843,7 +868,8 @@ ok      github.com/zlgwzy/go-project-sample/internal/pkg/repositorys    <span st
 <li>cover 查看测试用例覆盖度</li>
 <li>make build 编译代码</li>
 <li>make lint 静态代码检查</li>
-<li>proto 生成grpc代码</li>
+<li>make proto 生成grpc代码</li>
+<li>make docker 通过docker启动项目,包括依赖的数据</li>
 </ol>
 
 <h2 id="框架或库">框架或库</h2>
