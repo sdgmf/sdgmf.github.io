@@ -9,7 +9,8 @@ pygmentscodefences = true
 # pygmentscodefencesguesssyntax = true
 # pygmentsUseClassic=true 
 
-googleAnalytics="UA-144729654-1"
+#googleAnalytics="UA-144729654-1"
+googleAnalytics="UA-144925501-1"
 
 
 [params]
