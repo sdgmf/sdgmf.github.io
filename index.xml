@@ -29,12 +29,21 @@ https://dave.cheney.net/2019/01/08/avoid-package-names-like-base-util-or-common<
     </item>
     
     <item>
-      <title>Golang微服务实践</title>
+      <title>Golang微服务最佳实践</title>
       <link>https://sdgmf.github.io/post/goproject/</link>
       <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
       
       <guid>https://sdgmf.github.io/post/goproject/</guid>
       <description>&lt;p&gt;本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、框架选择等方面介绍Go语言项目的开发经验.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>About</title>
+      <link>https://sdgmf.github.io/about/</link>
+      <pubDate>Wed, 09 Apr 2014 00:00:00 +0000</pubDate>
+      
+      <guid>https://sdgmf.github.io/about/</guid>
+      <description>I am a programer.</description>
     </item>
     
     <item>
@@ -44,15 +53,6 @@ https://dave.cheney.net/2019/01/08/avoid-package-names-like-base-util-or-common<
       
       <guid>https://sdgmf.github.io/404/</guid>
       <description> Error 404: Page Not Found It seems that the page that you&amp;rsquo;re trying to access doesn&amp;rsquo;t exist. :worried: If you&amp;rsquo;re sure that it exists, chances are it might have been moved to a new link! You may search for it on the home page. </description>
-    </item>
-    
-    <item>
-      <title></title>
-      <link>https://sdgmf.github.io/about/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://sdgmf.github.io/about/</guid>
-      <description>So, Who Am I? ---- I am a programer. </description>
     </item>
     
   </channel>

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>unit test on Sdgmf &#39;s Blog</title>
+    <title>unit-test on Sdgmf &#39;s Blog</title>
     <link>https://sdgmf.github.io/tags/unit-test/</link>
-    <description>Recent content in unit test on Sdgmf &#39;s Blog</description>
+    <description>Recent content in unit-test on Sdgmf &#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Wed, 24 Jul 2019 15:16:41 +0800</lastBuildDate>
     
@@ -11,7 +11,7 @@
     
     
     <item>
-      <title>Golang微服务实践</title>
+      <title>Golang微服务最佳实践</title>
       <link>https://sdgmf.github.io/post/goproject/</link>
       <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
       
