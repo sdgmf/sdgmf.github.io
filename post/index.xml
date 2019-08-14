@@ -12,10 +12,10 @@
     
     <item>
       <title>Golang最佳实践(基础篇)-命名</title>
-      <link>https://sdgmf.github.io/post/go-best-practice-name/</link>
+      <link>https://sdgmf.github.io/go-best-practice-name/</link>
       <pubDate>Mon, 12 Aug 2019 21:19:39 +0800</pubDate>
       
-      <guid>https://sdgmf.github.io/post/go-best-practice-name/</guid>
+      <guid>https://sdgmf.github.io/go-best-practice-name/</guid>
       <description>编写好的Go程序，理解它的特性和风格是非常重要,了解Go语言编程中已有的约定也非常重要. 良好的命名和统一的编程风格可以让Go程序员容易理解你编写的程序。
 基本规则 Go约定使用MixedCaps或者mixedCaps的形式，而不是下划线来书写多个单词的名字。
 项目名(仓库名)  项目名(仓库名）的命名可以使用字母、数字。 多个单词建议采用中划线分隔，目前github中大多数项目都是使用用中划线，不建议采用驼峰式分隔，不要使用下划线(kubernetes中的组件名称不允许使用下划线) 命名可以是对项目功能的描述；也可以是一个代号（如神话人物的名字，或者希腊语）,适合采用代号的项目有两种，一种是公司的基础组件或者开源项目，一般这种项目都有详细的文档， 项目名（仓库名）要尽量避免重复，如果可能重复要添加必要的前缀或者后缀做区分。 命名尽量在三个单词以内。  正确:
@@ -30,10 +30,10 @@ https://dave.cheney.net/2019/01/08/avoid-package-names-like-base-util-or-common<
     
     <item>
       <title>Golang微服务最佳实践</title>
-      <link>https://sdgmf.github.io/post/goproject/</link>
+      <link>https://sdgmf.github.io/goproject/</link>
       <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
       
-      <guid>https://sdgmf.github.io/post/goproject/</guid>
+      <guid>https://sdgmf.github.io/goproject/</guid>
       <description>&lt;p&gt;本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、框架选择等方面介绍Go语言项目的开发经验.&lt;/p&gt;</description>
     </item>
     

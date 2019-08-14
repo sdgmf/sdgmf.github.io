@@ -3,7 +3,7 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>https://sdgmf.github.io/post/go-best-practice-name/</loc>
+    <loc>https://sdgmf.github.io/go-best-practice-name/</loc>
     <lastmod>2019-08-12T21:19:39+08:00</lastmod>
   </url>
   
@@ -20,13 +20,7 @@
   </url>
   
   <url>
-    <loc>https://sdgmf.github.io/categories/</loc>
-    <lastmod>2019-07-24T15:16:41+08:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://sdgmf.github.io/post/goproject/</loc>
+    <loc>https://sdgmf.github.io/goproject/</loc>
     <lastmod>2019-07-24T15:16:41+08:00</lastmod>
   </url>
   
@@ -44,12 +38,6 @@
   
   <url>
     <loc>https://sdgmf.github.io/tags/errors/</loc>
-    <lastmod>2019-07-24T15:16:41+08:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://sdgmf.github.io/categories/golang/</loc>
     <lastmod>2019-07-24T15:16:41+08:00</lastmod>
     <priority>0</priority>
   </url>
