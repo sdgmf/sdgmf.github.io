@@ -1,10 +1,10 @@
 ---
-title: Golang微服务实践
+title: Golang微服务最佳实践
 date: 2019-07-24T15:16:41+08:00
 lastmod: 2019-07-24T15:16:41+08:00
 draft: false
 categories: ["golang"]
-tags: ["golang", "dependency inject","unit test","wire","log","errors","微服务"]
+tags: ["golang", "dependency-inject","unit-test","wire","log","errors","microservice"]
 description: Golang项目示例
 ---
 

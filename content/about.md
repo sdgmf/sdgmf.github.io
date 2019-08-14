@@ -1,6 +1,14 @@
-<h1>So, Who Am I?</h1>
++++
+title = "About"
+date = "2014-04-09"
++++
 
-----
-<br>
+I'm a programmer who likes Java, go, infrastructure, big data, containers, etc
 
-I am a programer.
+## Github
+
+* https://github.com/sdgmf
+
+## Email
+
+* smxe.sdgmf@gmail.com
