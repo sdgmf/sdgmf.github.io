@@ -14,7 +14,6 @@ googleAnalytics="UA-144925501-1"
 
 
 [params]
-    brightheader = true
 	[params.utterances]         # utteranc is a comment system based on GitHub issues. see https://utteranc.es
 		owner = "sdgmf" # github用户名
 		repo = "sdgmf.github.io"    # 仓库地址The repo to store comments

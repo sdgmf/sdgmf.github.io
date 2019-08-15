@@ -4,7 +4,7 @@ date: 2019-07-24T15:16:41+08:00
 lastmod: 2019-07-24T15:16:41+08:00
 draft: false
 categories: ["golang"]
-tags: ["golang", "dependency-inject","unit-test","wire","log","errors","microservice"]
+tags: ["golang", "dependency-inject","test","log","errors","microservice"]
 description: Golang项目示例
 ---
 
@@ -21,103 +21,87 @@ description: Golang项目示例
 
 Github源码[go-project-sample](http://github.com/sdgmf/go-project-sample)
 
+## 快速开始
+
+```bash
+    make docker-compose
+```
+
+* **访问接口**： http://localhost:8080/product/1
+* **consul**: http://localhost:8500/
+* **grafana**: http://localhost:3000/ 
+* **jaeger**: http://localhost:16686/search
+* **Prometheus**: http://localhost:9090/graph 
+
 ## 包结构
 
 关于golang项目的包结构，Dave Chaney博客《[Five suggestions for setting up a Go project](https://dave.cheney.net/2014/12/01/five-suggestions-for-setting-up-a-go-project)》里讨论了package和command的包设计建议，还有一个社区普遍认可的包结构规范[project-layout](https://github.com/golang-standards/project-layout)。在这两个两篇文章的知道下，结合常见的互联网微服务项目，我又细化了如下的项目结构。
 
 ```bash
 .
-├── Makefile
-├── README.md
 ├── api
 │   └── proto
-│       ├── products.pb.go
-│       └── products.proto
+├── build
+│   ├── details
+│   ├── products
+│   ├── ratings
+│   └── reviews
 ├── cmd
-│   └── sample
-│       ├── main.go
-│       ├── wire.go
-│       └── wire_gen.go
+│   ├── details
+│   ├── products
+│   ├── ratings
+│   └── reviews
 ├── configs
-│   └── sample.yml
+├── deployments
 ├── dist
-│   ├── sample-darwin-amd64
-│   ├── sample-linux-amd64
-│   └── test
-│       └── cover.out
-├── docker
-│   └── sample
-│       ├── Dockerfile
-│       └── docker-compose.yml
-├── go.mod
-├── go.sum
 ├── internal
 │   ├── app
-│   │   ├── sample
-│   │   │   ├── app.go
+│   │   ├── details
 │   │   │   ├── controllers
-│   │   │   │   ├── controllers.go
-│   │   │   │   ├── products.go
-│   │   │   │   ├── products_test.go
-│   │   │   │   ├── wire.go
-│   │   │   │   └── wire_gen.go
-│   │   │   └── grpcservers
-│   │   │       ├── products.go
-│   │   │       ├── products_test.go
-│   │   │       ├── servers.go
-│   │   │       ├── wire.go
-│   │   │       └── wire_gen.go
-│   │   └── tool
-│   │       └── clients
-│   │           ├── clients.go
-│   │           ├── products.go
-│   │           ├── products_test.go.bak
-│   │           └── wire.go
+│   │   │   ├── grpcservers
+│   │   │   ├── repositorys
+│   │   │   └── services
+│   │   ├── products
+│   │   │   ├── controllers
+│   │   │   ├── grpcclients
+│   │   │   └── services
+│   │   ├── ratings
+│   │   │   ├── controllers
+│   │   │   ├── grpcservers
+│   │   │   ├── repositorys
+│   │   │   └── services
+│   │   └── reviews
+│   │       ├── controllers
+│   │       ├── grpcservers
+│   │       ├── repositorys
+│   │       └── services
 │   └── pkg
+│       ├── app
 │       ├── config
-│       │   ├── config.go
-│       │   └── wire.go
+│       ├── consul
 │       ├── database
-│       │   └── database.go
+│       ├── jaeger
 │       ├── log
-│       │   └── log.go
 │       ├── models
-│       │   └── product.go
-│       ├── repositorys
-│       │   ├── cover.out
-│       │   ├── mock_ProductsStorage.go
-│       │   ├── products.go
-│       │   ├── products_test.go
-│       │   ├── repositorys.go
-│       │   ├── wire.go
-│       │   └── wire_gen.go
-│       ├── services
-│       │   ├── mock_ProductsService.go
-│       │   ├── products.go
-│       │   ├── products_test.go
-│       │   ├── services.go
-│       │   ├── wire.go
-│       │   └── wire_gen.go
-│       └── transport
-│           ├── grpc
-│           │   └── grpc.go
-│           └── http
-│               └── http.go
+│       ├── transports
+│       │   ├── grpc
+│       │   └── http
+│       │       └── middlewares
+│       │           └── ginprom
+│       └── utils
+│           └── netutil
+├── mocks
 └── scripts
-    ├── sample.sql
-    └── wait-for-it.sh
-
-
 
 ```
 
-### \cmd
+### /cmd
 
 同[project-layout](https://github.com/golang-standards/project-layout)
 
 > "该项目的main方法。 每个应用程序的目录名称应与您要拥有的可执行文件的名称相匹配（例如，/cmd/myapp）。 不要在应用程序目录中放入大量代码。 如果您认为代码可以导入并在其他项目中使用，那么它应该存在于/ pkg目录中。 如果代码不可重用或者您不希望其他人重用它，请将该代码放在/ internal目录中。 你会惊讶于别人会做什么，所以要明确你的意图！ 通常有一个小的main函数可以从/ internal和/ pkg目录中导入和调用代码，而不是其他任何东西。"
 
-### \internal\pkg
+### /internal/pkg
 
 同[project-layout](https://github.com/golang-standards/project-layout)
 
@@ -125,57 +109,69 @@ Github源码[go-project-sample](http://github.com/sdgmf/go-project-sample)
 
 内部的包采用平铺的方式。
 
-### \internal\pkg\config
+### /internal/pkg/config
 
 加载配置文件,或者从配置中心获取配置和监听配置变动。
 
-### \internal\pkg\database
+### /internal/pkg/database
 
 数据库连接初始化和ORM框架初始化配置。
 
-### \internal\pkg\models
+### /internal/pkg/models
 
 结构体定义。
 
-#### \internal\pkg\repositrys
+### /internal/pkg/transport
 
-存储层逻辑代码。
+http/gpc 传输层
 
-### \internal\pkg\services
-
-领域逻辑层代码。
-
-### \internal\pkg\transport
-
-传输层/控制层逻辑代码
-
-### \internal\app\proxy
+### /internal/app/products
 
 应用内部代码
 
-### \internal\app\controllers
+### /internal/app/products/controllers
 
-http handlers
+MVC控制层
 
-### \internal\app\grpcserver
+### /internal/app/products/services
 
-grpc server 实现
+领域逻辑层
+
+### /internal/app/products/repositorys
+
+存储层
+
+### /internal/app/products/grpcclients
+
+grpc client
+
+### /internal/app/details/grpcservers
+
+grpc servers
+
+### /mocks
+
+mockery 生成的mock实现
 
 ### /api
 
-同[project-layout](https://github.com/golang-standards/project-layout)
+OpenAPI/Swagger规范，JSON模式文件，协议定义文件等。
 
-> OpenAPI/Swagger规范，JSON模式文件，协议定义文件等。
+### /grafana
+
+生成grafana dashboard 用到的脚本
 
 ### /scripts
 
-同[project-layout](https://github.com/golang-standards/project-layout)
+sql、部署脚本等
 
-> sql、部署等脚本
+### /build
 
-### /docker
+Dockerfile、docker-compose
 
-> Dockerfile、docker-compose
+### /deployment
+
+docker-compose/kubernetes等配置
 
 ## 分层
 
@@ -437,10 +433,13 @@ func NewObject(logger *zap.Logger){
 3. 使用 pakcage [errors](github.com/pkg/errors)
 4. 只处理一次错误，处理错误意味着检查错误值并做出决定。
 
-错误输出示例
+### 错误日志
+
+```go
+logger.Error("get product by id error", zap.Error(err))
+```
 
 ``` json
-// pc.logger.Error("get product by id error", zap.Error(err))
 
 {
     "level":"error",
@@ -494,6 +493,654 @@ runtime.goexit
 }
 
 ```
+
+### 接口中返回错误
+
+gin 的使用方式:
+
+```go
+func Handler(c *gin.Context) {
+    err := //
+    c.String(http.StatusInternalServerError, "%+v", err)
+}
+
+
+```
+
+curl http://localhost:8080/product/5 输出:
+
+```txt
+rpc error: code = Unknown desc = details grpc service get detail error: detail service get detail error: get product error[id=5]: record not found
+get rating error
+github.com/sdgmf/go-project-sample/internal/app/products/services.(*DefaultProductsService).Get
+     /Users/fengbin/code/go/go-project-sample/internal/app/products/services/products.go:50
+github.com/sdgmf/go-project-sample/internal/app/products/controllers.(*ProductsController).Get
+     /Users/fengbin/code/go/go-project-sample/internal/app/products/controllers/products.go:30
+github.com/gin-gonic/gin.(*Context).Next
+     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+github.com/opentracing-contrib/go-gin/ginhttp.Middleware.func4
+     /Users/fengbin/go/pkg/mod/github.com/opentracing-contrib/go-gin@v0.0.0-20190301172248-2e18f8b9c7d4/ginhttp/server.go:99
+github.com/gin-gonic/gin.(*Context).Next
+     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+github.com/sdgmf/go-project-sample/internal/pkg/transports/http/middlewares/ginprom.(*GinPrometheus).Middleware.func1
+     /Users/fengbin/code/go/go-project-sample/internal/pkg/transports/http/middlewares/ginprom/ginprom.go:105
+github.com/gin-gonic/gin.(*Context).Next
+     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+github.com/gin-contrib/zap.RecoveryWithZap.func1
+     /Users/fengbin/go/pkg/mod/github.com/gin-contrib/zap@v0.0.0-20190528085758-3cc18cd8fce3/zap.go:109
+github.com/gin-gonic/gin.(*Context).Next
+     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+github.com/gin-contrib/zap.Ginzap.func1
+     /Users/fengbin/go/pkg/mod/github.com/gin-contrib/zap@v0.0.0-20190528085758-3cc18cd8fce3/zap.go:32
+github.com/gin-gonic/gin.(*Context).Next
+     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+github.com/gin-gonic/gin.RecoveryWithWriter.func1
+     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/recovery.go:83
+github.com/gin-gonic/gin.(*Context).Next
+     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+github.com/gin-gonic/gin.(*Engine).handleHTTPRequest
+     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/gin.go:389
+github.com/gin-gonic/gin.(*Engine).ServeHTTP
+     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/gin.go:351
+net/http.serverHandler.ServeHTTP
+     /usr/local/Cellar/go/1.12.6/libexec/src/net/http/server.go:2774
+net/http.(*conn).serve
+     /usr/local/Cellar/go/1.12.6/libexec/src/net/http/server.go:1878
+runtime.goexit
+     /usr/local/Cellar/go/1.12.6/libexec/src/runtime/asm_amd64.s:1337
+```
+
+## 添加监控
+
+### Prometheus
+
+作为新一代的监控框架，Prometheus 具有以下特点：
+
+* 强大的多维度数据模型：
+* 时间序列数据通过 metric 名和键值对来区分。
+* 所有的 metrics 都可以设置任意的多维标签。
+* 数据模型更随意，不需要刻意设置为以点分隔的字符串。
+* 可以对数据模型进行聚合，切割和切片操作。
+* 支持双精度浮点类型，标签可以设为全 unicode。
+* 灵活而强大的查询语句（PromQL）：在同一个查询语句，可以对多个 metrics 进行乘法、加法、连接、取分数位等操作。
+* 易于管理： Prometheus server 是一个单独的二进制文件，可直接在本地工作，不依赖于分布式存储。
+* 高效：平均每个采样点仅占 3.5 bytes，且一个 Prometheus server 可以处理数百万的 metrics。
+* 使用 pull 模式采集时间序列数据，这样不仅有利于本机测试而且可以避免有问题的服务器推送坏的 metrics。
+* 可以采用 push gateway 的方式把时间序列数据推送至 Prometheus server 端。
+* 可以通过服务发现或者静态配置去获取监控的 targets。
+* 有多种可视化图形界面。
+* 易于伸缩
+
+### Go基础监控
+
+```go
+import (
+    "github.com/opentracing-contrib/go-gin/ginhttp"
+    "github.com/gin-gonic/gin"
+)
+r := gin.New()
+
+r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+```
+
+### http监控
+
+创建internal/pkg/transports/http/middlewares/ginprom/ginprom.go
+
+```go
+package ginprom
+
+import (
+     "strconv"
+     "sync"
+     "time"
+
+     "github.com/gin-gonic/gin"
+     "github.com/prometheus/client_golang/prometheus"
+)
+
+const (
+     metricsPath = "/metrics"
+     faviconPath = "/favicon.ico"
+)
+
+var (
+     httpHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+          Namespace: "http_server",
+          Name:      "requests_seconds",
+          Help:      "Histogram of response latency (seconds) of http handlers.",
+     }, []string{"method", "code", "uri"})
+)
+
+func init() {
+     prometheus.MustRegister(httpHistogram)
+}
+
+type handlerPath struct {
+     sync.Map
+}
+
+func (hp *handlerPath) get(handler string) string {
+     v, ok := hp.Load(handler)
+     if !ok {
+          return ""
+     }
+     return v.(string)
+}
+
+func (hp *handlerPath) set(ri gin.RouteInfo) {
+     hp.Store(ri.Handler, ri.Path)
+}
+
+// GinPrometheus  struct
+type GinPrometheus struct {
+     engine   *gin.Engine
+     ignored map[string]bool
+     pathMap *handlerPath
+     updated bool
+}
+
+// Option 可配置参数
+type Option func(*GinPrometheus)
+
+// Ignore 添加忽略的路径
+func Ignore(path ...string) Option {
+     return func(gp *GinPrometheus) {
+          for _, p := range path {
+               gp.ignored[p] = true
+          }
+     }
+}
+
+// New 构造器
+func New(e *gin.Engine, options ...Option) *GinPrometheus {
+     // 参数验证
+     if e == nil {
+          return nil
+     }
+     gp := &GinPrometheus{
+          engine: e,
+          ignored: map[string]bool{
+               metricsPath: true,
+               faviconPath: true,
+          },
+          pathMap: &handlerPath{},
+     }
+     for _, o := range options {
+          o(gp)
+     }
+     return gp
+}
+
+func (gp *GinPrometheus) updatePath() {
+     gp.updated = true
+     for _, ri := range gp.engine.Routes() {
+          gp.pathMap.set(ri)
+     }
+}
+
+// Middleware 返回中间件
+func (gp *GinPrometheus) Middleware() gin.HandlerFunc {
+     return func(c *gin.Context) {
+          if !gp.updated {
+               gp.updatePath()
+          }
+          // 把不需要的过滤掉
+          if gp.ignored[c.Request.URL.String()] == true {
+               c.Next()
+               return
+          }
+          start := time.Now()
+
+          c.Next()
+
+          httpHistogram.WithLabelValues(
+               c.Request.Method,
+               strconv.Itoa(c.Writer.Status()),
+               gp.pathMap.get(c.HandlerName()),
+          ).Observe(time.Since(start).Seconds())
+     }
+}
+
+```
+
+在internal/pkg/transports/http/http.go添加:
+
+```go
+r.Use(ginprom.New(r).Middleware()) // 添加prometheus 监控
+```
+
+### grpc监控
+
+在server添加：
+
+```go
+          gs = grpc.NewServer(
+               grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+                    grpc_ctxtags.StreamServerInterceptor(),
+                    grpc_opentracing.StreamServerInterceptor(),
+                    grpc_prometheus.StreamServerInterceptor,
+                    grpc_zap.StreamServerInterceptor(logger),
+                    grpc_recovery.StreamServerInterceptor(),
+                    otgrpc.OpenTracingStreamServerInterceptor(tracer),
+               )),
+               grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+                    grpc_ctxtags.UnaryServerInterceptor(),
+                    grpc_opentracing.UnaryServerInterceptor(),
+                    grpc_prometheus.UnaryServerInterceptor,
+                    grpc_zap.UnaryServerInterceptor(logger),
+                    grpc_recovery.UnaryServerInterceptor(),
+                    otgrpc.OpenTracingServerInterceptor(tracer),
+               )),
+          )
+```
+
+在client添加：
+
+```go
+     grpc_prometheus.EnableClientHandlingTimeHistogram()
+     o.GrpcDialOptions = append(o.GrpcDialOptions,
+          grpc.WithInsecure(),
+          grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(
+               grpc_prometheus.UnaryClientInterceptor,
+               otgrpc.OpenTracingClientInterceptor(tracer)),
+          ),
+          grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(
+               grpc_prometheus.StreamClientInterceptor,
+               otgrpc.OpenTracingStreamClientInterceptor(tracer)),
+          ),
+     )
+```
+
+### 添加dashbord
+
+可以通过自动生成dashboard，可以集成到自己公司的CICD系统中，上线后dashboard就有了,下面介绍如何通过jsonnet生成dashboard
+
+* 安装[jsonnet](https://jsonnet.org/)
+* 下载[graonnet-lib](https://github.com/grafana/grafonnet-lib.git)
+
+创建 grafana/dashboard.jsonnet
+
+```jsonnet
+local grafana = import 'grafonnet/grafana.libsonnet';
+local dashboard = grafana.dashboard;
+local row = grafana.row;
+local singlestat = grafana.singlestat;
+local prometheus = grafana.prometheus;
+local graphPanel = grafana.graphPanel;
+local template = grafana.template;
+local row = grafana.row;
+
+local app = std.extVar('app');
+
+local baseUp() = singlestat.new(
+  'Number of instances',
+  datasource='Prometheus',
+  span=2,
+  valueName='current',
+  transparent=true,
+).addTarget(
+  prometheus.target(
+    'sum(up{app="' + app + '"})', instant=true
+  )
+);
+
+local baseGrpcQPS() = singlestat.new(
+  'Number of grpc request  per seconds',
+  datasource='Prometheus',
+  span=2,
+  valueName='current',
+  transparent=true,
+).addTarget(
+  prometheus.target(
+    'sum(rate(grpc_server_handled_total{app="' + app + '",grpc_type="unary"}[1m]))',
+     instant=true
+  )
+);
+
+local baseGrpcError() = singlestat.new(
+  'Percentage of grpc error request',
+  format='percent',
+  datasource='Prometheus',
+  span=2,
+  valueName='current',
+  transparent=true,
+).addTarget(
+  prometheus.target(
+    'sum(rate(grpc_server_handled_total{app="' + app + '",grpc_type="unary",grpc_code!="OK"}[1m])) /sum(rate(grpc_server_started_total{app="' + app + '",grpc_type="unary"}[1m])) * 100.0',
+    instant=true
+  )
+);
+
+local baseHttpQPS() = singlestat.new(
+  'Number of http request  per seconds',
+  datasource='Prometheus',
+  span=2,
+  valueName='current',
+  transparent=true,
+).addTarget(
+  prometheus.target(
+    'sum(rate(http_server_requests_seconds_count{app="' + app + '"}[1m]))',
+     instant=true
+  )
+);
+
+local baseHttpError() = singlestat.new(
+  'Percentage of http error request',
+  datasource='Prometheus',
+  format='percent',
+  span=2,
+  valueName='current',
+  transparent=true,
+).addTarget(
+  prometheus.target(
+    'sum(rate(http_server_requests_seconds_count{app="' + app + '",code!="200"}[1m])) /sum(rate(http_server_requests_seconds_count{app="' + app + '"}[1m])) * 100.0',
+    instant=true
+  )
+);
+
+local goState(metric, description=null, format='none') = graphPanel.new(
+  metric,
+  span=6,
+  fill=0,
+  min=0,
+  legend_values=true,
+  legend_min=false,
+  legend_max=true,
+  legend_current=true,
+  legend_total=false,
+  legend_avg=false,
+  legend_alignAsTable=true,
+  legend_rightSide=true,
+  transparent=true,
+  description=description,
+).addTarget(
+  prometheus.target(
+    metric + '{app="' + app + '"}',
+    datasource='Prometheus',
+    legendFormat='{{instance}}'
+  )
+);
+
+
+
+
+local grpcQPS(kind='server', groups=['grpc_code']) = graphPanel.new(
+  //title='grpc_' + kind + '_qps_' + std.join(',', groups),
+  title='Number of grpc ' + kind + ' request  per seconds group by (' + std.join(',', groups) + ')',
+  description='Number of grpc ' + kind + ' request per seconds  group by (' + std.join(',', groups) + ')',
+  legend_values=true,
+  legend_max=true,
+  legend_current=true,
+  legend_alignAsTable=true,
+  legend_rightSide=true,
+  transparent=true,
+  span=6,
+  fill=0,
+  min=0,
+).addTarget(
+  prometheus.target(
+    'sum(rate(grpc_' + kind + '_handled_total{app="' + app + '",grpc_type="unary"}[1m])) by (' + std.join(',', groups) + ')',
+    datasource='Prometheus',
+    legendFormat='{{' + std.join('}}.{{', groups) + '}}'
+  )
+);
+
+
+local grpcErrorPercentage(kind='server', groups=['instance']) = graphPanel.new(
+  //title='grpc_' + kind + '_error_percentage_' + std.join(',', groups),
+  title='Percentage of grpc ' + kind + ' error request group by (' + std.join(',', groups) + ')',
+  description='Percentage of grpc ' + kind + ' error request group by (' + std.join(',', groups) + ')',
+  format='percent',
+  legend_values=true,
+  legend_max=true,
+  legend_current=true,
+  legend_alignAsTable=true,
+  legend_rightSide=true,
+  transparent=true,
+  span=6,
+  fill=0,
+  min=0,
+).addTarget(
+  prometheus.target(
+    'sum(rate(grpc_'+kind+'_handled_total{app="' + app + '",grpc_type="unary",grpc_code!="OK"}[1m])) by (' + std.join(',', groups) + ')/sum(rate(grpc_'+kind+'_started_total{app="' + app + '",grpc_type="unary"}[1m])) by (' + std.join(',', groups) + ')* 100.0',
+    datasource='Prometheus',
+    legendFormat='{{' + std.join('}}.{{', groups) + '}}'
+  )
+);
+
+
+local grpcLatency(kind='server', groups=['instance'], quantile='0.99') = graphPanel.new(
+  title='Latency of grpc ' + kind + ' request group by (' + std.join(',', groups) + ')',
+  description='Latency of grpc ' + kind + ' request group by (' + std.join(',', groups) + ')',
+  format='ms',
+  legend_values=true,
+  legend_max=true,
+  legend_current=true,
+  legend_alignAsTable=true,
+  legend_rightSide=true,
+  transparent=true,
+  span=6,
+  fill=0,
+  min=0,
+).addTarget(
+  prometheus.target(
+    '1000 * histogram_quantile(' + quantile + ',sum(rate(grpc_' + kind + '_handling_seconds_bucket{app="' + app + '",grpc_type="unary"}[1m])) by (' + std.join(',', groups) + ',le))',
+    datasource='Prometheus',
+    legendFormat='{{' + std.join('}}.{{', groups) + '}}'
+  )
+);
+
+
+
+
+local httpQPS(kind='server', groups=['grpc_code']) = graphPanel.new(
+  title='Number of http' + kind + ' request group by (' + std.join(',', groups) + ') per seconds',
+  description='Number of http' + kind + ' request group by (' + std.join(',', groups) + ') per seconds',
+  legend_values=true,
+  legend_max=true,
+  legend_current=true,
+  legend_alignAsTable=true,
+  legend_rightSide=true,
+  transparent=true,
+  span=6,
+  fill=0,
+  min=0,
+).addTarget(
+  prometheus.target(
+    'sum(rate(http_server_requests_seconds_count{app="' + app + '"}[1m])) by (' + std.join(',', groups) + ')',
+    datasource='Prometheus',
+    legendFormat='{{' + std.join('}}.{{', groups) + '}}'
+  )
+);
+
+
+local httpErrorPercentage(groups=['instance']) = graphPanel.new(
+  //title='grpc_' + kind + '_error_percentage_' + std.join(',', groups),
+  title='Percentage of http error request group by (' + std.join(',', groups) + ') ',
+  description='Percentage of http error request group by (' + std.join(',', groups) + ')',
+  format='percent',
+  legend_values=true,
+  legend_max=true,
+  legend_current=true,
+  legend_alignAsTable=true,
+  legend_rightSide=true,
+  transparent=true,
+  span=6,
+  fill=0,
+  min=0,
+).addTarget(
+  prometheus.target(
+    'sum(rate(http_server_requests_seconds_count{app="' + app + '",status!="200"}[1m])) by (' + std.join(',', groups) + ')/sum(rate(http_server_requests_seconds_count{app="' + app + '"}[1m])) by (' + std.join(',', groups) + ')* 100.0',
+    datasource='Prometheus',
+    legendFormat='{{' + std.join('}}.{{', groups) + '}}'
+  )
+);
+
+local httpLatency(groups=['instance'], quantile='0.99') = graphPanel.new(
+  title='Latency of http request group by (' + std.join(',', groups) + ')',
+  description='Latency of http request group by (' + std.join(',', groups) + ')',
+  format='ms',
+  legend_values=true,
+  legend_max=true,
+  legend_current=true,
+  legend_alignAsTable=true,
+  legend_rightSide=true,
+  transparent=true,
+  span=6,
+  fill=0,
+  min=0,
+).addTarget(
+  prometheus.target(
+    '1000 * histogram_quantile(' + quantile + ',sum(rate(http_server_requests_seconds_bucket{app="' + app + '"}[1m])) by (' + std.join(',', groups) + ',le))',
+    datasource='Prometheus',
+    legendFormat='{{' + std.join('}}.{{', groups) + '}}'
+  )
+);
+
+
+dashboard.new(app, schemaVersion=16, tags=['go'], editable=true, uid=app)
+.addPanel(row.new(title='Base', collapse=true)
+          .addPanel(baseUp(), gridPos={ x: 0, y: 0, w: 4, h: 10 })
+          .addPanel(baseGrpcQPS(), gridPos={x: 4, y: 0, w: 4, h: 10 })
+          .addPanel(baseGrpcError(), gridPos={x: 8, y: 0, w: 4, h: 10 })
+          .addPanel(baseHttpQPS(), gridPos={x: 12, y: 0, w: 4, h: 10 })
+          .addPanel(baseHttpError(), gridPos={x: 16, y: 0, w: 4, h: 10 })
+          ,{  })
+.addPanel(row.new(title='Go', collapse=true)
+          .addPanel(goState('go_goroutines', 'Number of goroutines that currently exist'), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_alloc_bytes', 'Number of bytes allocated and still in use'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_alloc_bytes_total', 'Total number of bytes allocated, even if freed'), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_buck_hash_sys_bytes', 'Number of bytes used by the profiling bucket hash table'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_frees_total', 'Total number of frees'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_gc_cpu_fraction', "The fraction of this program's available CPU time used by the GC since the program started."), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_gc_sys_bytes', 'Number of bytes used for garbage collection system metadata'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_heap_alloc_bytes', 'Number of heap bytes allocated and still in use'), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_heap_idle_bytes', 'Number of heap bytes waiting to be used'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_heap_inuse_bytes', 'Number of heap bytes that are in use'), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_heap_objects', 'Number of allocated objects'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_heap_released_bytes', 'Number of heap bytes released to OS'), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_heap_sys_bytes', 'Number of heap bytes obtained from system'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_last_gc_time_seconds', 'Number of seconds since 1970 of last garbage collection'), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_lookups_total', 'Total number of pointer lookups'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_mallocs_total', 'Total number of mallocs'), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_mcache_inuse_bytes', 'Number of bytes in use by mcache structures'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_mcache_sys_bytes', 'Number of bytes used for mcache structures obtained from system'), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_mspan_inuse_bytes', 'Number of bytes in use by mspan structures'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_mspan_sys_bytes', 'Number of bytes used for mspan structures obtained from system'), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_next_gc_bytes', 'Number of heap bytes when next garbage collection will take place'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_other_sys_bytes', 'Number of bytes used for other system allocations'), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_stack_inuse_bytes', 'Number of bytes in use by the stack allocator'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_stack_sys_bytes', 'Number of bytes obtained from system for stack allocator'), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(goState('go_memstats_sys_bytes', 'Number of bytes obtained from system'), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          , {})
+
+.addPanel(row.new(title='Grpc Server request rate', collapse=true)
+          .addPanel(grpcQPS('server', ['grpc_code']), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcQPS('server', ['instance']), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(grpcQPS('server', ['grpc_service']), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcQPS('server', ['grpc_service', 'grpc_method']), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          , {})
+.addPanel(row.new(title='Grpc Server request error percentage', collapse=true)
+          .addPanel(grpcErrorPercentage('server', ['grpc_service']), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcErrorPercentage('server', ['grpc_service', 'grpc_method']), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(grpcErrorPercentage('server', ['instance']), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          , {})
+.addPanel(row.new(title='Grpc server 99%-tile Latency of requests', collapse=true)
+          .addPanel(grpcLatency('server', ['grpc_code'], 0.99), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcLatency('server', ['instance'], 0.99), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(grpcLatency('server', ['grpc_service'], 0.99), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcLatency('server', ['grpc_service', 'grpc_method'], 0.99), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          , {})
+.addPanel(row.new(title='Grpc server 90%-tile Latency of requests', collapse=true)
+        .addPanel(grpcLatency('server', ['grpc_code'], 0.90), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+        .addPanel(grpcLatency('server', ['instance'], 0.90), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+        .addPanel(grpcLatency('server', ['grpc_service'], 0.90), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+        .addPanel(grpcLatency('server', ['grpc_service', 'grpc_method'], 0.99), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+        , {})
+.addPanel(row.new(title='Grpc client request rate', collapse=true)
+          .addPanel(grpcQPS('client', ['grpc_code']), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcQPS('client', ['instance']), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(grpcQPS('client', ['grpc_service']), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcQPS('client', ['grpc_service', 'grpc_method']), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          , {})
+.addPanel(row.new(title='Grpc client request error percentage', collapse=true)
+          .addPanel(grpcErrorPercentage('client', ['grpc_service']), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcErrorPercentage('client', ['grpc_service', 'grpc_method']), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(grpcErrorPercentage('client', ['instance']), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          , {})
+.addPanel(row.new(title='Grpc client 99%-tile Latency of requests', collapse=true)
+          .addPanel(grpcLatency('client', ['grpc_code'], 0.99), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcLatency('client', ['instance'], 0.99), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(grpcLatency('client', ['grpc_service'], 0.99), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcLatency('client', ['grpc_service', 'grpc_method'], 0.99), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          , {})
+.addPanel(row.new(title='Grpc client 90%-tile Latency of requests', collapse=true)
+          .addPanel(grpcLatency('client', ['grpc_code'], 0.90), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcLatency('client', ['instance'], 0.90), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(grpcLatency('client', ['grpc_service'], 0.90), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(grpcLatency('client', ['grpc_service', 'grpc_method'], 0.99), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          , {})
+.addPanel(row.new(title='Http server request rate', collapse=true)
+          .addPanel(httpQPS( ['grpc_code']), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(httpQPS( ['instance']), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(httpQPS( ['grpc_service']), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(httpQPS( ['grpc_service', 'grpc_method']), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          , {})
+.addPanel(row.new(title='Http server request error percentage', collapse=true)
+          .addPanel(httpErrorPercentage( ['instance']), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(httpErrorPercentage( ['method','uri']), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          , {})
+.addPanel(row.new(title='Http server 99%-tile Latency of requests', collapse=true)
+          .addPanel(httpLatency( ['grpc_code'], 0.99), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(httpLatency( ['instance'], 0.99), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(httpLatency( ['grpc_service'], 0.99), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(httpLatency( ['grpc_service', 'grpc_method'], 0.99), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          , {})
+.addPanel(row.new(title='Http server 90%-tile Latency of requests', collapse=true)
+          .addPanel(httpLatency( ['grpc_code'], 0.90), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(httpLatency( ['instance'], 0.90), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          .addPanel(httpLatency( ['grpc_service'], 0.90), gridPos={ x: 0, y: 0, w: 12, h: 10 })
+          .addPanel(httpLatency( ['grpc_service', 'grpc_method'], 0.90), gridPos={ x: 12, y: 0, w: 12, h: 10 })
+          , {})
+```
+
+创建grafana/dashboard-api.jsonnet
+
+```jsonnet
+local dash = import './dashboard.jsonnet';
+
+{
+  dashboard: dash,
+  folderId: 0,
+  overwrite: false,
+}
+```
+
+生成jsonnet配置
+
+``` bash
+jsonnet -J ./grafana/grafonnet-lib  -o ./grafana/dashboards-api/$$app-api.json  --ext-str app=$$app  ./grafana/dashboard-api.jsonnet ;
+
+```
+
+调研grafana api
+
+``` bash
+curl -X DELETE --user admin:admin  -H "Content-Type: application/json" 'http://localhost:3000/api/dashboards/db/$$app'
+curl -x POST --user admin:admin  -H "Content-Type: application/json" --data-binary "@./grafana/dashboards-api/$$app-api.json" http://localhost:3000/api/dashboards/db 
+```
+
+dashboard预览
+
+![dashboard](/images/grafana_dashboard.jpg)
+
+![dashboard1](/images/grafana_dashboard1.jpg)
+
+### 生成alermanager 告警
+
+TODO
 
 ## 单元测试
 
@@ -594,7 +1241,7 @@ PASS
 ok      github.com/zlgwzy/go-project-sample/internal/pkg/repositorys    0.049s
 ```
 
-###  逻辑层测试
+### 逻辑层测试
 
 通过mockery自动生成mock对象.
 
@@ -852,6 +1499,7 @@ func TestProductsService_Get(t *testing.T) {
 
 ```
 
+
 ## Makefile
 
 编写Makefile
@@ -895,11 +1543,9 @@ docker: build
 6. make build 编译代码
 7. make lint 静态代码检查
 8. make proto 生成grpc代码
-9. make docker 通过docker启动项目,包括依赖的数据
+9. make docker-compse 启动所有的服务和依赖的中间件，all-in-one
 
 ## 框架或库
-
-比较喜欢和常用的几个框架或库
 
 1. [Gin](https://github.com/gin-gonic/gin) MVC库
 2. [gorm](https://github.com/jinzhu/gorm) ORM库
