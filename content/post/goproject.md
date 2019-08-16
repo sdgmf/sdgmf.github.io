@@ -24,6 +24,8 @@ Github源码[go-project-sample](http://github.com/sdgmf/go-project-sample)
 ## 快速开始
 
 ```bash
+    git clone https://github.com/sdgmf/go-project-sample.git
+    cd go-project-sample
     make docker-compose
 ```
 
