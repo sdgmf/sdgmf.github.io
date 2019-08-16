@@ -209,6 +209,9 @@ blockquote,
 
 <small><code><a href="https://sdgmf.github.io/tags/microservice">microservice</a></code></small>
 
+
+<small><code><a href="https://sdgmf.github.io/tags/grpc">grpc</a></code></small>
+
 </p>
 <p>本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、框架选择等方面介绍Go语言项目的开发经验.</p>
 
@@ -864,20 +867,10 @@ runtime.goexit
 <p>在server添加：</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">          <span style="color:#a6e22e">gs</span> = <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewServer</span>(
                <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">StreamInterceptor</span>(<span style="color:#a6e22e">grpc_middleware</span>.<span style="color:#a6e22e">ChainStreamServer</span>(
-                    <span style="color:#a6e22e">grpc_ctxtags</span>.<span style="color:#a6e22e">StreamServerInterceptor</span>(),
-                    <span style="color:#a6e22e">grpc_opentracing</span>.<span style="color:#a6e22e">StreamServerInterceptor</span>(),
                     <span style="color:#a6e22e">grpc_prometheus</span>.<span style="color:#a6e22e">StreamServerInterceptor</span>,
-                    <span style="color:#a6e22e">grpc_zap</span>.<span style="color:#a6e22e">StreamServerInterceptor</span>(<span style="color:#a6e22e">logger</span>),
-                    <span style="color:#a6e22e">grpc_recovery</span>.<span style="color:#a6e22e">StreamServerInterceptor</span>(),
-                    <span style="color:#a6e22e">otgrpc</span>.<span style="color:#a6e22e">OpenTracingStreamServerInterceptor</span>(<span style="color:#a6e22e">tracer</span>),
                )),
                <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryInterceptor</span>(<span style="color:#a6e22e">grpc_middleware</span>.<span style="color:#a6e22e">ChainUnaryServer</span>(
-                    <span style="color:#a6e22e">grpc_ctxtags</span>.<span style="color:#a6e22e">UnaryServerInterceptor</span>(),
-                    <span style="color:#a6e22e">grpc_opentracing</span>.<span style="color:#a6e22e">UnaryServerInterceptor</span>(),
                     <span style="color:#a6e22e">grpc_prometheus</span>.<span style="color:#a6e22e">UnaryServerInterceptor</span>,
-                    <span style="color:#a6e22e">grpc_zap</span>.<span style="color:#a6e22e">UnaryServerInterceptor</span>(<span style="color:#a6e22e">logger</span>),
-                    <span style="color:#a6e22e">grpc_recovery</span>.<span style="color:#a6e22e">UnaryServerInterceptor</span>(),
-                    <span style="color:#a6e22e">otgrpc</span>.<span style="color:#a6e22e">OpenTracingServerInterceptor</span>(<span style="color:#a6e22e">tracer</span>),
                )),
           )</code></pre></div>
 <p>在client添加：</p>
@@ -886,11 +879,9 @@ runtime.goexit
           <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithInsecure</span>(),
           <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithUnaryInterceptor</span>(<span style="color:#a6e22e">grpc_middleware</span>.<span style="color:#a6e22e">ChainUnaryClient</span>(
                <span style="color:#a6e22e">grpc_prometheus</span>.<span style="color:#a6e22e">UnaryClientInterceptor</span>,
-               <span style="color:#a6e22e">otgrpc</span>.<span style="color:#a6e22e">OpenTracingClientInterceptor</span>(<span style="color:#a6e22e">tracer</span>)),
           ),
           <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithStreamInterceptor</span>(<span style="color:#a6e22e">grpc_middleware</span>.<span style="color:#a6e22e">ChainStreamClient</span>(
                <span style="color:#a6e22e">grpc_prometheus</span>.<span style="color:#a6e22e">StreamClientInterceptor</span>,
-               <span style="color:#a6e22e">otgrpc</span>.<span style="color:#a6e22e">OpenTracingStreamClientInterceptor</span>(<span style="color:#a6e22e">tracer</span>)),
           ),
      )</code></pre></div>
 <h3 id="添加dashbord">添加dashbord</h3>
@@ -1267,6 +1258,78 @@ curl -x POST --user admin:admin  -H <span style="color:#e6db74">&#34;Content-Typ
 
 <p>TODO</p>
 
+<h2 id="调用链跟踪">调用链跟踪</h2>
+
+<h3 id="jaeger">Jaeger</h3>
+
+<p><a href="https://github.com/jaegertracing/jaeger">Jaeger</a> 是Uber开源的基于<a href="https://opentracing.io/">Opentracing</a> 的一个实现，类似于zipkin。</p>
+
+<p>创建internal/pkg/jaeger/jaeger.go</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">jaeger</span>
+
+<span style="color:#f92672">import</span> (
+     <span style="color:#e6db74">&#34;github.com/google/wire&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/opentracing/opentracing-go&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/pkg/errors&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/spf13/viper&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/uber/jaeger-client-go/config&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/uber/jaeger-lib/metrics/prometheus&#34;</span>
+     <span style="color:#e6db74">&#34;go.uber.org/zap&#34;</span>
+)
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewConfiguration</span>(<span style="color:#a6e22e">v</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">viper</span>.<span style="color:#a6e22e">Viper</span>, <span style="color:#a6e22e">logger</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">zap</span>.<span style="color:#a6e22e">Logger</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">Configuration</span>, <span style="color:#66d9ef">error</span>) {
+     <span style="color:#66d9ef">var</span> (
+          <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>
+          <span style="color:#a6e22e">c</span>   = new(<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">Configuration</span>)
+     )
+
+     <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">v</span>.<span style="color:#a6e22e">UnmarshalKey</span>(<span style="color:#e6db74">&#34;jaeger&#34;</span>, <span style="color:#a6e22e">c</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">Wrap</span>(<span style="color:#a6e22e">err</span>, <span style="color:#e6db74">&#34;unmarshal jaeger configuration error&#34;</span>)
+     }
+
+     <span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;load jaeger configuration success&#34;</span>)
+
+     <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">c</span>, <span style="color:#66d9ef">nil</span>
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">Configuration</span>) (<span style="color:#a6e22e">opentracing</span>.<span style="color:#a6e22e">Tracer</span>, <span style="color:#66d9ef">error</span>) {
+
+     <span style="color:#a6e22e">metricsFactory</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">New</span>()
+     <span style="color:#a6e22e">tracer</span>, <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">NewTracer</span>(<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">Metrics</span>(<span style="color:#a6e22e">metricsFactory</span>))
+
+     <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">Wrap</span>(<span style="color:#a6e22e">err</span>, <span style="color:#e6db74">&#34;create jaeger tracer error&#34;</span>)
+     }
+
+     <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">tracer</span>, <span style="color:#66d9ef">nil</span>
+}
+
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">ProviderSet</span> = <span style="color:#a6e22e">wire</span>.<span style="color:#a6e22e">NewSet</span>(<span style="color:#a6e22e">New</span>, <span style="color:#a6e22e">NewConfiguration</span>)</code></pre></div>
+<h3 id="grpc">Grpc</h3>
+
+<p>修改internal/pkg/transports/grpc/server.go</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">          <span style="color:#a6e22e">gs</span> = <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewServer</span>(
+               <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">StreamInterceptor</span>(<span style="color:#a6e22e">grpc_middleware</span>.<span style="color:#a6e22e">ChainStreamServer</span>(
+                    <span style="color:#a6e22e">otgrpc</span>.<span style="color:#a6e22e">OpenTracingStreamServerInterceptor</span>(<span style="color:#a6e22e">tracer</span>),
+               )),
+               <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryInterceptor</span>(<span style="color:#a6e22e">grpc_middleware</span>.<span style="color:#a6e22e">ChainUnaryServer</span>(
+                    <span style="color:#a6e22e">otgrpc</span>.<span style="color:#a6e22e">OpenTracingServerInterceptor</span>(<span style="color:#a6e22e">tracer</span>),
+               )),
+          )</code></pre></div>
+<p>修改internal/pkg/transports/grpc/client.go</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">     <span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">DialContext</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">target</span>, <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithInsecure</span>(),
+          <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithUnaryInterceptor</span>(<span style="color:#a6e22e">grpc_middleware</span>.<span style="color:#a6e22e">ChainUnaryClient</span>(
+               <span style="color:#a6e22e">otgrpc</span>.<span style="color:#a6e22e">OpenTracingClientInterceptor</span>(<span style="color:#a6e22e">tracer</span>)),
+          ),
+          <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithStreamInterceptor</span>(<span style="color:#a6e22e">grpc_middleware</span>.<span style="color:#a6e22e">ChainStreamClient</span>(
+               <span style="color:#a6e22e">otgrpc</span>.<span style="color:#a6e22e">OpenTracingStreamClientInterceptor</span>(<span style="color:#a6e22e">tracer</span>)),
+          ),)</code></pre></div>
+<h3 id="gin">Gin</h3>
+
+<p>修改internal/pkg/transports/http/http.go</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">import</span> <span style="color:#e6db74">&#34;github.com/opentracing-contrib/go-gin/ginhttp&#34;</span>
+
+<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Use</span>(<span style="color:#a6e22e">ginhttp</span>.<span style="color:#a6e22e">Middleware</span>(<span style="color:#a6e22e">tracer</span>))</code></pre></div>
 <h2 id="单元测试">单元测试</h2>
 
 <h3 id="存储层测试">存储层测试</h3>
@@ -1277,312 +1340,399 @@ curl -x POST --user admin:admin  -H <span style="color:#e6db74">&#34;Content-Typ
 <span style="color:#f92672">package</span> <span style="color:#a6e22e">repositorys</span>
 
 <span style="color:#f92672">import</span> (
-    <span style="color:#e6db74">&#34;github.com/google/wire&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/config&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/database&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/log&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/google/wire&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/internal/pkg/config&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/internal/pkg/database&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/internal/pkg/log&#34;</span>
 )
 
 
 
 <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">testProviderSet</span> = <span style="color:#a6e22e">wire</span>.<span style="color:#a6e22e">NewSet</span>(
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">ProviderSet</span>,
-    <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">ProviderSet</span>,
-    <span style="color:#a6e22e">database</span>.<span style="color:#a6e22e">ProviderSet</span>,
-    <span style="color:#a6e22e">ProviderSet</span>,
+     <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">ProviderSet</span>,
+     <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">ProviderSet</span>,
+     <span style="color:#a6e22e">database</span>.<span style="color:#a6e22e">ProviderSet</span>,
+     <span style="color:#a6e22e">ProviderSet</span>,
 )
 
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CreateProductRepository</span>(<span style="color:#a6e22e">f</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">ProductsRepository</span>, <span style="color:#66d9ef">error</span>) {
-    panic(<span style="color:#a6e22e">wire</span>.<span style="color:#a6e22e">Build</span>(<span style="color:#a6e22e">testProviderSet</span>))
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CreateDetailRepository</span>(<span style="color:#a6e22e">f</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">DetailsRepository</span>, <span style="color:#66d9ef">error</span>) {
+     panic(<span style="color:#a6e22e">wire</span>.<span style="color:#a6e22e">Build</span>(<span style="color:#a6e22e">testProviderSet</span>))
 }</code></pre></div>
 <p>添加repositorys/products_test.go,这里采用表格驱动的方法进行测试,存储层测试会依赖数据库。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">repositorys</span>
 
 <span style="color:#f92672">import</span> (
-    <span style="color:#e6db74">&#34;flag&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/stretchr/testify/assert&#34;</span>
-    <span style="color:#e6db74">&#34;testing&#34;</span>
+     <span style="color:#e6db74">&#34;flag&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/stretchr/testify/assert&#34;</span>
+     <span style="color:#e6db74">&#34;testing&#34;</span>
 )
 
-<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">configFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;f&#34;</span>, <span style="color:#e6db74">&#34;app.yml&#34;</span>, <span style="color:#e6db74">&#34;set config file which viper will loading.&#34;</span>)
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">configFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;f&#34;</span>, <span style="color:#e6db74">&#34;details.yml&#34;</span>, <span style="color:#e6db74">&#34;set config file which viper will loading.&#34;</span>)
 
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestProductsRepository_Get</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
-    <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestDetailsRepository_Get</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+     <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
 
-    <span style="color:#a6e22e">sto</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">CreateProductRepository</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">configFile</span>)
-    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;create product Repository error,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
-    }
+     <span style="color:#a6e22e">sto</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">CreateDetailRepository</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">configFile</span>)
+     <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+          <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;create product Repository error,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
+     }
 
-    <span style="color:#a6e22e">tests</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">struct</span> {
-        <span style="color:#a6e22e">name</span>     <span style="color:#66d9ef">string</span>
-        <span style="color:#a6e22e">id</span>       <span style="color:#66d9ef">uint64</span>
-        <span style="color:#a6e22e">expected</span> <span style="color:#66d9ef">bool</span>
-    }{
-        {<span style="color:#e6db74">&#34;1+1&#34;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#66d9ef">true</span>},
-        {<span style="color:#e6db74">&#34;2+3&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#66d9ef">false</span>},
-        {<span style="color:#e6db74">&#34;4+5&#34;</span>, <span style="color:#ae81ff">3</span>, <span style="color:#66d9ef">false</span>},
-    }
+     <span style="color:#a6e22e">tests</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">struct</span> {
+          <span style="color:#a6e22e">name</span>     <span style="color:#66d9ef">string</span>
+          <span style="color:#a6e22e">id</span>       <span style="color:#66d9ef">uint64</span>
+          <span style="color:#a6e22e">expected</span> <span style="color:#66d9ef">bool</span>
+     }{
+          {<span style="color:#e6db74">&#34;id=1&#34;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#66d9ef">true</span>},
+          {<span style="color:#e6db74">&#34;id=2&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#66d9ef">true</span>},
+          {<span style="color:#e6db74">&#34;id=3&#34;</span>, <span style="color:#ae81ff">3</span>, <span style="color:#66d9ef">true</span>},
+     }
 
-    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">test</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">tests</span> {
-        <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">name</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
-            <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sto</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">id</span>)
+     <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">test</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">tests</span> {
+          <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">name</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+               <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sto</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">id</span>)
 
-            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">expected</span> {
-                <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">NoError</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">err</span> )
-            }<span style="color:#66d9ef">else</span> {
-                <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">err</span>)
-            }
-        })
-    }
+               <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">expected</span> {
+                    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">NoError</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">err</span> )
+               }<span style="color:#66d9ef">else</span> {
+                    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">err</span>)
+               }
+          })
+     }
 }</code></pre></div>
 <p>运行测试</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cd internal/pkg/repositorys
- go test . -v -f ../../../configs/proxy.yml 
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">go test -v ./internal/app/details/repositorys -f <span style="color:#66d9ef">$(</span>pwd<span style="color:#66d9ef">)</span>/configs/details.yml
 
-<span style="color:#f92672">===</span> RUN   TestProductsRepository_Get
-<span style="color:#ae81ff">2019</span>/07/26 <span style="color:#ae81ff">14</span>:29:28 use config file:../../../configs/proxy.yml
-<span style="color:#ae81ff">2019</span>-07-26T14:29:28.301+0800    INFO    load log options success        <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;url&#34;</span>: <span style="color:#e6db74">&#34;root:xxx@tcp(127.0.0.1:3306)/shop?charset=utf8&amp;parseTime=True&amp;loc=Local&#34;</span><span style="color:#f92672">}</span>
-<span style="color:#f92672">===</span> RUN   TestProductsRepository_Get/1+1
-<span style="color:#f92672">===</span> RUN   TestProductsRepository_Get/2+3
-<span style="color:#f92672">===</span> RUN   TestProductsRepository_Get/4+5
---- PASS: TestProductsRepository_Get <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.04s<span style="color:#f92672">)</span>
-    --- PASS: TestProductsRepository_Get/1+1 <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.00s<span style="color:#f92672">)</span>
-    --- PASS: TestProductsRepository_Get/2+3 <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.00s<span style="color:#f92672">)</span>
-    --- PASS: TestProductsRepository_Get/4+5 <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.00s<span style="color:#f92672">)</span>
+<span style="color:#f92672">===</span> RUN   TestDetailsRepository_Get
+use config file -&gt; /Users/fengbin/code/go/go-project-sample/configs/details.yml
+<span style="color:#f92672">===</span> RUN   TestDetailsRepository_Get/id<span style="color:#f92672">=</span>1
+<span style="color:#f92672">===</span> RUN   TestDetailsRepository_Get/id<span style="color:#f92672">=</span>2
+<span style="color:#f92672">===</span> RUN   TestDetailsRepository_Get/id<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>
+--- PASS: TestDetailsRepository_Get <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.11s<span style="color:#f92672">)</span>
+    --- PASS: TestDetailsRepository_Get/id<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.00s<span style="color:#f92672">)</span>
+    --- PASS: TestDetailsRepository_Get/id<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.00s<span style="color:#f92672">)</span>
+    --- PASS: TestDetailsRepository_Get/id<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.00s<span style="color:#f92672">)</span>
 PASS
-ok      github.com/zlgwzy/go-project-sample/internal/pkg/repositorys    <span style="color:#ae81ff">0</span>.049s</code></pre></div>
+ok      github.com/sdgmf/go-project-sample/internal/app/details/repositorys     <span style="color:#ae81ff">0</span>.128s</code></pre></div>
 <h3 id="逻辑层测试">逻辑层测试</h3>
 
 <p>通过mockery自动生成mock对象.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">    <span style="color:#a6e22e">mockery</span> <span style="color:#f92672">--</span><span style="color:#a6e22e">all</span> <span style="color:#f92672">--</span><span style="color:#a6e22e">inpkg</span></code></pre></div>
-<p>添加services/wire.go</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">    <span style="color:#a6e22e">mockery</span> <span style="color:#f92672">--</span><span style="color:#a6e22e">all</span></code></pre></div>
+<p>添加internal/app/details/services/wire.go</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// +build wireinject
 </span><span style="color:#75715e"></span>
 <span style="color:#f92672">package</span> <span style="color:#a6e22e">services</span>
 
 <span style="color:#f92672">import</span> (
-    <span style="color:#e6db74">&#34;github.com/google/wire&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/config&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/database&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/log&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/repositorys&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/google/wire&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/internal/pkg/config&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/internal/pkg/database&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/internal/pkg/log&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/internal/app/details/repositorys&#34;</span>
 )
 
 <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">testProviderSet</span> = <span style="color:#a6e22e">wire</span>.<span style="color:#a6e22e">NewSet</span>(
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">ProviderSet</span>,
-    <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">ProviderSet</span>,
-    <span style="color:#a6e22e">database</span>.<span style="color:#a6e22e">ProviderSet</span>,
-    <span style="color:#a6e22e">ProviderSet</span>,
+     <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">ProviderSet</span>,
+     <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">ProviderSet</span>,
+     <span style="color:#a6e22e">database</span>.<span style="color:#a6e22e">ProviderSet</span>,
+     <span style="color:#a6e22e">ProviderSet</span>,
 )
 
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CreateProductsService</span>(<span style="color:#a6e22e">cf</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">sto</span> <span style="color:#a6e22e">repositorys</span>.<span style="color:#a6e22e">ProductsRepository</span>) (<span style="color:#a6e22e">ProductsService</span>, <span style="color:#66d9ef">error</span>) {
-    panic(<span style="color:#a6e22e">wire</span>.<span style="color:#a6e22e">Build</span>(<span style="color:#a6e22e">testProviderSet</span>))
-}</code></pre></div>
-<p>编写单元测试services/products_test.go</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">services</span>
-
-<span style="color:#f92672">import</span> (
-    <span style="color:#e6db74">&#34;flag&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/stretchr/testify/assert&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/stretchr/testify/mock&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/models&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/repositorys&#34;</span>
-    <span style="color:#e6db74">&#34;testing&#34;</span>
-)
-
-<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">configFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;f&#34;</span>, <span style="color:#e6db74">&#34;proxy.yml&#34;</span>, <span style="color:#e6db74">&#34;set config file which viper will loading.&#34;</span>)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestProductsRepository_Get</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
-    <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
-
-    <span style="color:#a6e22e">sto</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">repositorys</span>.<span style="color:#a6e22e">MockProductsRepository</span>)
-
-    <span style="color:#a6e22e">sto</span>.<span style="color:#a6e22e">On</span>(<span style="color:#e6db74">&#34;Get&#34;</span>, <span style="color:#a6e22e">mock</span>.<span style="color:#a6e22e">AnythingOfType</span>(<span style="color:#e6db74">&#34;uint64&#34;</span>)).<span style="color:#a6e22e">Return</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Product</span>) {
-        <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Product</span>{
-            <span style="color:#a6e22e">ID</span>: <span style="color:#a6e22e">ID</span>,
-        }
-    }, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) <span style="color:#66d9ef">error</span> {
-        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
-    })
-
-    <span style="color:#a6e22e">svc</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">CreateProductsService</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">configFile</span>, <span style="color:#a6e22e">sto</span>)
-    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;create product serviceerror,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
-    }
-
-    <span style="color:#75715e">// 表格驱动测试
-</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">tests</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">struct</span> {
-        <span style="color:#a6e22e">name</span>     <span style="color:#66d9ef">string</span>
-        <span style="color:#a6e22e">id</span>       <span style="color:#66d9ef">uint64</span>
-        <span style="color:#a6e22e">expected</span> <span style="color:#66d9ef">uint64</span>
-    }{
-        {<span style="color:#e6db74">&#34;1+1&#34;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>},
-        {<span style="color:#e6db74">&#34;2+3&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>},
-        {<span style="color:#e6db74">&#34;4+5&#34;</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>},
-    }
-
-    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">test</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">tests</span> {
-        <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">name</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
-            <span style="color:#a6e22e">p</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">id</span>)
-            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-                <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;product service get proudct error,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
-            }
-
-            <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Equal</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">expected</span>, <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">ID</span>)
-        })
-    }
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CreateDetailsService</span>(<span style="color:#a6e22e">cf</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">sto</span> <span style="color:#a6e22e">repositorys</span>.<span style="color:#a6e22e">DetailsRepository</span>) (<span style="color:#a6e22e">DetailsService</span>, <span style="color:#66d9ef">error</span>) {
+     panic(<span style="color:#a6e22e">wire</span>.<span style="color:#a6e22e">Build</span>(<span style="color:#a6e22e">testProviderSet</span>))
 }</code></pre></div>
 <p>存储层使用生成的MockProductsRepository，可以直接在用例中定义Mock方法的返回值。</p>
 
+<p>创建 services/details_test.go</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">services</span>
+
+<span style="color:#f92672">import</span> (
+     <span style="color:#e6db74">&#34;flag&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/internal/pkg/models&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/mocks&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/stretchr/testify/assert&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/stretchr/testify/mock&#34;</span>
+     <span style="color:#e6db74">&#34;testing&#34;</span>
+)
+
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">configFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;f&#34;</span>, <span style="color:#e6db74">&#34;details.yml&#34;</span>, <span style="color:#e6db74">&#34;set config file which viper will loading.&#34;</span>)
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestDetailsRepository_Get</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+     <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
+
+     <span style="color:#a6e22e">sto</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">mocks</span>.<span style="color:#a6e22e">DetailsRepository</span>)
+
+     <span style="color:#a6e22e">sto</span>.<span style="color:#a6e22e">On</span>(<span style="color:#e6db74">&#34;Get&#34;</span>, <span style="color:#a6e22e">mock</span>.<span style="color:#a6e22e">AnythingOfType</span>(<span style="color:#e6db74">&#34;uint64&#34;</span>)).<span style="color:#a6e22e">Return</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Detail</span>) {
+          <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Detail</span>{
+               <span style="color:#a6e22e">ID</span>: <span style="color:#a6e22e">ID</span>,
+          }
+     }, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) <span style="color:#66d9ef">error</span> {
+          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+     })
+
+     <span style="color:#a6e22e">svc</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">CreateDetailsService</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">configFile</span>, <span style="color:#a6e22e">sto</span>)
+     <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+          <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;create product serviceerror,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
+     }
+
+     <span style="color:#75715e">// 表格驱动测试
+</span><span style="color:#75715e"></span>     <span style="color:#a6e22e">tests</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">struct</span> {
+          <span style="color:#a6e22e">name</span>     <span style="color:#66d9ef">string</span>
+          <span style="color:#a6e22e">id</span>       <span style="color:#66d9ef">uint64</span>
+          <span style="color:#a6e22e">expected</span> <span style="color:#66d9ef">uint64</span>
+     }{
+          {<span style="color:#e6db74">&#34;1+1&#34;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>},
+          {<span style="color:#e6db74">&#34;2+3&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>},
+          {<span style="color:#e6db74">&#34;4+5&#34;</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>},
+     }
+
+     <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">test</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">tests</span> {
+          <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">name</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+               <span style="color:#a6e22e">p</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">id</span>)
+               <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+                    <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;product service get proudct error,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
+               }
+
+               <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Equal</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">expected</span>, <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">ID</span>)
+          })
+     }
+}</code></pre></div>
 <h3 id="控制层测试">控制层测试</h3>
 
-<p>添加controllers/products_test.go,利用httptest进行测试</p>
+<p>添加controllers/details_test.go,利用httptest进行测试</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">controllers</span>
 
 <span style="color:#f92672">import</span> (
-    <span style="color:#e6db74">&#34;encoding/json&#34;</span>
-    <span style="color:#e6db74">&#34;flag&#34;</span>
-    <span style="color:#e6db74">&#34;fmt&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/gin-gonic/gin&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/stretchr/testify/assert&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/stretchr/testify/mock&#34;</span>
-    <span style="color:#e6db74">&#34;io/ioutil&#34;</span>
-    <span style="color:#e6db74">&#34;net/http/httptest&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/models&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/repositorys&#34;</span>
-    <span style="color:#e6db74">&#34;testing&#34;</span>
+     <span style="color:#e6db74">&#34;encoding/json&#34;</span>
+     <span style="color:#e6db74">&#34;flag&#34;</span>
+     <span style="color:#e6db74">&#34;fmt&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/gin-gonic/gin&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/internal/pkg/models&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/mocks&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/stretchr/testify/assert&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/stretchr/testify/mock&#34;</span>
+     <span style="color:#e6db74">&#34;io/ioutil&#34;</span>
+     <span style="color:#e6db74">&#34;net/http/httptest&#34;</span>
+     <span style="color:#e6db74">&#34;testing&#34;</span>
 )
 
 <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">gin</span>.<span style="color:#a6e22e">Engine</span>
-<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">configFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;f&#34;</span>, <span style="color:#e6db74">&#34;proxy.yml&#34;</span>, <span style="color:#e6db74">&#34;set config file which viper will loading.&#34;</span>)
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">configFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;f&#34;</span>, <span style="color:#e6db74">&#34;details.yml&#34;</span>, <span style="color:#e6db74">&#34;set config file which viper will loading.&#34;</span>)
 
 <span style="color:#66d9ef">func</span> <span style="color:#a6e22e">setup</span>() {
-    <span style="color:#a6e22e">r</span> = <span style="color:#a6e22e">gin</span>.<span style="color:#a6e22e">New</span>()
+     <span style="color:#a6e22e">r</span> = <span style="color:#a6e22e">gin</span>.<span style="color:#a6e22e">New</span>()
 }
 
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestProductsController_Get</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
-    <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
-    <span style="color:#a6e22e">setup</span>()
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestDetailsController_Get</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+     <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
+     <span style="color:#a6e22e">setup</span>()
 
-    <span style="color:#a6e22e">sto</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">repositorys</span>.<span style="color:#a6e22e">MockProductsRepository</span>)
+     <span style="color:#a6e22e">sto</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">mocks</span>.<span style="color:#a6e22e">DetailsRepository</span>)
 
-    <span style="color:#a6e22e">sto</span>.<span style="color:#a6e22e">On</span>(<span style="color:#e6db74">&#34;Get&#34;</span>, <span style="color:#a6e22e">mock</span>.<span style="color:#a6e22e">AnythingOfType</span>(<span style="color:#e6db74">&#34;uint64&#34;</span>)).<span style="color:#a6e22e">Return</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Product</span>) {
-        <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Product</span>{
-            <span style="color:#a6e22e">ID</span>: <span style="color:#a6e22e">ID</span>,
-        }
-    }, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) <span style="color:#66d9ef">error</span> {
-        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
-    })
+     <span style="color:#a6e22e">sto</span>.<span style="color:#a6e22e">On</span>(<span style="color:#e6db74">&#34;Get&#34;</span>, <span style="color:#a6e22e">mock</span>.<span style="color:#a6e22e">AnythingOfType</span>(<span style="color:#e6db74">&#34;uint64&#34;</span>)).<span style="color:#a6e22e">Return</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Detail</span>) {
+          <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Detail</span>{
+               <span style="color:#a6e22e">ID</span>: <span style="color:#a6e22e">ID</span>,
+          }
+     }, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) <span style="color:#66d9ef">error</span> {
+          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+     })
 
-    <span style="color:#a6e22e">c</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">CreateProductsController</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">configFile</span>, <span style="color:#a6e22e">sto</span>)
-    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;create product serviceerror,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
-    }
+     <span style="color:#a6e22e">c</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">CreateDetailsController</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">configFile</span>, <span style="color:#a6e22e">sto</span>)
+     <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+          <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;create product serviceerror,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
+     }
 
-    <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GET</span>(<span style="color:#e6db74">&#34;/products/:id&#34;</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Get</span>)
+     <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GET</span>(<span style="color:#e6db74">&#34;/proto/:id&#34;</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Get</span>)
 
-    <span style="color:#a6e22e">tests</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">struct</span> {
-        <span style="color:#a6e22e">name</span>     <span style="color:#66d9ef">string</span>
-        <span style="color:#a6e22e">id</span>       <span style="color:#66d9ef">uint64</span>
-        <span style="color:#a6e22e">expected</span> <span style="color:#66d9ef">uint64</span>
-    }{
-        {<span style="color:#e6db74">&#34;1&#34;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>},
-        {<span style="color:#e6db74">&#34;2&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>},
-        {<span style="color:#e6db74">&#34;3&#34;</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>},
-    }
+     <span style="color:#a6e22e">tests</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">struct</span> {
+          <span style="color:#a6e22e">name</span>     <span style="color:#66d9ef">string</span>
+          <span style="color:#a6e22e">id</span>       <span style="color:#66d9ef">uint64</span>
+          <span style="color:#a6e22e">expected</span> <span style="color:#66d9ef">uint64</span>
+     }{
+          {<span style="color:#e6db74">&#34;1&#34;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>},
+          {<span style="color:#e6db74">&#34;2&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>},
+          {<span style="color:#e6db74">&#34;3&#34;</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>},
+     }
 
-    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">test</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">tests</span> {
-        <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">name</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
-            <span style="color:#a6e22e">uri</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;/products/%d&#34;</span>, <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">id</span>)
-            <span style="color:#75715e">// 构造get请求
-</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">req</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">httptest</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#e6db74">&#34;GET&#34;</span>, <span style="color:#a6e22e">uri</span>, <span style="color:#66d9ef">nil</span>)
-            <span style="color:#75715e">// 初始化响应
-</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">w</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">httptest</span>.<span style="color:#a6e22e">NewRecorder</span>()
+     <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">test</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">tests</span> {
+          <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">name</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+               <span style="color:#a6e22e">uri</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;/proto/%d&#34;</span>, <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">id</span>)
+               <span style="color:#75715e">// 构造get请求
+</span><span style="color:#75715e"></span>               <span style="color:#a6e22e">req</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">httptest</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#e6db74">&#34;GET&#34;</span>, <span style="color:#a6e22e">uri</span>, <span style="color:#66d9ef">nil</span>)
+               <span style="color:#75715e">// 初始化响应
+</span><span style="color:#75715e"></span>               <span style="color:#a6e22e">w</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">httptest</span>.<span style="color:#a6e22e">NewRecorder</span>()
 
-            <span style="color:#75715e">// 调用相应的controller接口
-</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">req</span>)
+               <span style="color:#75715e">// 调用相应的controller接口
+</span><span style="color:#75715e"></span>               <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">req</span>)
 
-            <span style="color:#75715e">// 提取响应
-</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">rs</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">Result</span>()
-            <span style="color:#66d9ef">defer</span> <span style="color:#66d9ef">func</span>() {
-                <span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">rs</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Close</span>()
-            }()
+               <span style="color:#75715e">// 提取响应
+</span><span style="color:#75715e"></span>               <span style="color:#a6e22e">rs</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">Result</span>()
+               <span style="color:#66d9ef">defer</span> <span style="color:#66d9ef">func</span>() {
+                    <span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">rs</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Close</span>()
+               }()
 
-            <span style="color:#75715e">// 读取响应body
-</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">body</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadAll</span>(<span style="color:#a6e22e">rs</span>.<span style="color:#a6e22e">Body</span>)
-            <span style="color:#a6e22e">p</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Product</span>)
-            <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">body</span>, <span style="color:#a6e22e">p</span>)
-            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-                <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;unmarshal response body error:%v&#34;</span>, <span style="color:#a6e22e">err</span>)
-            }
+               <span style="color:#75715e">// 读取响应body
+</span><span style="color:#75715e"></span>               <span style="color:#a6e22e">body</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadAll</span>(<span style="color:#a6e22e">rs</span>.<span style="color:#a6e22e">Body</span>)
+               <span style="color:#a6e22e">p</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Detail</span>)
+               <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">body</span>, <span style="color:#a6e22e">p</span>)
+               <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+                    <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;unmarshal response body error:%v&#34;</span>, <span style="color:#a6e22e">err</span>)
+               }
 
-            <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Equal</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">expected</span>, <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">ID</span>)
-        })
-    }
+               <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Equal</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">expected</span>, <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">ID</span>)
+          })
+     }
 
 }</code></pre></div>
 <h3 id="grpc测试">grpc测试</h3>
 
-<p>添加grpcservers/products_test.go</p>
+<h4 id="测试server">测试Server</h4>
+
+<p>添加grpcservers/details_test.go</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">grpcservers</span>
 
 <span style="color:#f92672">import</span> (
-    <span style="color:#e6db74">&#34;context&#34;</span>
-    <span style="color:#e6db74">&#34;flag&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/stretchr/testify/assert&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/stretchr/testify/mock&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/models&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/internal/pkg/services&#34;</span>
-    <span style="color:#e6db74">&#34;github.com/zlgwzy/go-project-sample/api/proto&#34;</span>
-    <span style="color:#e6db74">&#34;testing&#34;</span>
+     <span style="color:#e6db74">&#34;context&#34;</span>
+     <span style="color:#e6db74">&#34;flag&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/api/proto&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/internal/pkg/models&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/mocks&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/stretchr/testify/assert&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/stretchr/testify/mock&#34;</span>
+     <span style="color:#e6db74">&#34;testing&#34;</span>
 )
 
-<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">configFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;f&#34;</span>, <span style="color:#e6db74">&#34;proxy.yml&#34;</span>, <span style="color:#e6db74">&#34;set config file which viper will loading.&#34;</span>)
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">configFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;f&#34;</span>, <span style="color:#e6db74">&#34;details.yml&#34;</span>, <span style="color:#e6db74">&#34;set config file which viper will loading.&#34;</span>)
 
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestProductsService_Get</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
-    <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestDetailsService_Get</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+     <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
 
-    <span style="color:#a6e22e">service</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">services</span>.<span style="color:#a6e22e">MockProductsService</span>)
+     <span style="color:#a6e22e">service</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">mocks</span>.<span style="color:#a6e22e">DetailsService</span>)
 
-    <span style="color:#a6e22e">service</span>.<span style="color:#a6e22e">On</span>(<span style="color:#e6db74">&#34;Get&#34;</span>, <span style="color:#a6e22e">mock</span>.<span style="color:#a6e22e">AnythingOfType</span>(<span style="color:#e6db74">&#34;uint64&#34;</span>)).<span style="color:#a6e22e">Return</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Product</span>) {
-        <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Product</span>{
-            <span style="color:#a6e22e">ID</span>: <span style="color:#a6e22e">ID</span>,
-        }
-    }, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) <span style="color:#66d9ef">error</span> {
-        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
-    })
+     <span style="color:#a6e22e">service</span>.<span style="color:#a6e22e">On</span>(<span style="color:#e6db74">&#34;Get&#34;</span>, <span style="color:#a6e22e">mock</span>.<span style="color:#a6e22e">AnythingOfType</span>(<span style="color:#e6db74">&#34;uint64&#34;</span>)).<span style="color:#a6e22e">Return</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Detail</span>) {
+          <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Detail</span>{
+               <span style="color:#a6e22e">ID</span>: <span style="color:#a6e22e">ID</span>,
+          }
+     }, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ID</span> <span style="color:#66d9ef">uint64</span>) <span style="color:#66d9ef">error</span> {
+          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+     })
 
-    <span style="color:#a6e22e">server</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">CreateProductsServer</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">configFile</span>, <span style="color:#a6e22e">service</span>)
-    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;create product server error,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
-    }
+     <span style="color:#a6e22e">server</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">CreateDetailsServer</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">configFile</span>, <span style="color:#a6e22e">service</span>)
+     <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+          <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;create product server error,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
+     }
 
-    <span style="color:#75715e">// 表格驱动测试
-</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">tests</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">struct</span> {
-        <span style="color:#a6e22e">name</span>     <span style="color:#66d9ef">string</span>
-        <span style="color:#a6e22e">id</span>       <span style="color:#66d9ef">uint64</span>
-        <span style="color:#a6e22e">expected</span> <span style="color:#66d9ef">uint64</span>
-    }{
-        {<span style="color:#e6db74">&#34;1+1&#34;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>},
-        {<span style="color:#e6db74">&#34;2+3&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>},
-        {<span style="color:#e6db74">&#34;4+5&#34;</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>},
-    }
+     <span style="color:#75715e">// 表格驱动测试
+</span><span style="color:#75715e"></span>     <span style="color:#a6e22e">tests</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">struct</span> {
+          <span style="color:#a6e22e">name</span>     <span style="color:#66d9ef">string</span>
+          <span style="color:#a6e22e">id</span>       <span style="color:#66d9ef">uint64</span>
+          <span style="color:#a6e22e">expected</span> <span style="color:#66d9ef">uint64</span>
+     }{
+          {<span style="color:#e6db74">&#34;1+1&#34;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>},
+          {<span style="color:#e6db74">&#34;2+3&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>},
+          {<span style="color:#e6db74">&#34;4+5&#34;</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">3</span>},
+     }
 
-    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">test</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">tests</span> {
-        <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">name</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
-            <span style="color:#a6e22e">req</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">ProductGetRequest</span>{
-                <span style="color:#a6e22e">ID</span>: <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">id</span>,
-            }
-            <span style="color:#a6e22e">p</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">req</span>)
-            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-                <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;product service get proudct error,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
-            }
+     <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">test</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">tests</span> {
+          <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">name</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+               <span style="color:#a6e22e">req</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">GetDetailRequest</span>{
+                    <span style="color:#a6e22e">Id</span>: <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">id</span>,
+               }
+               <span style="color:#a6e22e">p</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">req</span>)
+               <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+                    <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;product service get proudct error,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
+               }
 
-            <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Equal</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">expected</span>, <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">ID</span>)
-        })
-    }
+               <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Equal</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">expected</span>, <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">Id</span>)
+          })
+     }
 
+}</code></pre></div>
+<h4 id="mock-grpc-client">mock grpc client</h4>
+
+<p>/internal/app/products/services/products_test.go:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">services</span>
+
+<span style="color:#f92672">import</span> (
+     <span style="color:#e6db74">&#34;context&#34;</span>
+     <span style="color:#e6db74">&#34;flag&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/golang/protobuf/ptypes&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/api/proto&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/sdgmf/go-project-sample/mocks&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/stretchr/testify/assert&#34;</span>
+     <span style="color:#e6db74">&#34;github.com/stretchr/testify/mock&#34;</span>
+     <span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+     <span style="color:#e6db74">&#34;testing&#34;</span>
+)
+
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">configFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;f&#34;</span>, <span style="color:#e6db74">&#34;products.yml&#34;</span>, <span style="color:#e6db74">&#34;set config file which viper will loading.&#34;</span>)
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestDefaultProductsService_Get</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+     <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
+
+     <span style="color:#a6e22e">detailsCli</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">mocks</span>.<span style="color:#a6e22e">DetailsClient</span>)
+     <span style="color:#a6e22e">detailsCli</span>.<span style="color:#a6e22e">On</span>(<span style="color:#e6db74">&#34;Get&#34;</span>, <span style="color:#a6e22e">mock</span>.<span style="color:#a6e22e">Anything</span>, <span style="color:#a6e22e">mock</span>.<span style="color:#a6e22e">Anything</span>).
+          <span style="color:#a6e22e">Return</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">GetDetailRequest</span>, <span style="color:#a6e22e">cos</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">CallOption</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Detail</span> {
+               <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Detail</span>{
+                    <span style="color:#a6e22e">Id</span>:          <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Id</span>,
+                    <span style="color:#a6e22e">CreatedTime</span>: <span style="color:#a6e22e">ptypes</span>.<span style="color:#a6e22e">TimestampNow</span>(),
+               }
+          }, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">GetDetailRequest</span>, <span style="color:#a6e22e">cos</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">CallOption</span>) <span style="color:#66d9ef">error</span> {
+               <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+          })
+
+     <span style="color:#a6e22e">ratingsCli</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">mocks</span>.<span style="color:#a6e22e">RatingsClient</span>)
+
+     <span style="color:#a6e22e">ratingsCli</span>.<span style="color:#a6e22e">On</span>(<span style="color:#e6db74">&#34;Get&#34;</span>, <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">mock</span>.<span style="color:#a6e22e">AnythingOfType</span>(<span style="color:#e6db74">&#34;*proto.GetRatingRequest&#34;</span>)).
+          <span style="color:#a6e22e">Return</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">GetRatingRequest</span>, <span style="color:#a6e22e">cos</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">CallOption</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Rating</span> {
+               <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Rating</span>{
+                    <span style="color:#a6e22e">Id</span>:          <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">ProductID</span>,
+                    <span style="color:#a6e22e">UpdatedTime</span>: <span style="color:#a6e22e">ptypes</span>.<span style="color:#a6e22e">TimestampNow</span>(),
+               }
+          }, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">GetRatingRequest</span>, <span style="color:#a6e22e">cos</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">CallOption</span>) <span style="color:#66d9ef">error</span> {
+               <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+          })
+
+     <span style="color:#a6e22e">reviewsCli</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">mocks</span>.<span style="color:#a6e22e">ReviewsClient</span>)
+
+     <span style="color:#a6e22e">reviewsCli</span>.<span style="color:#a6e22e">On</span>(<span style="color:#e6db74">&#34;Query&#34;</span>, <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">mock</span>.<span style="color:#a6e22e">AnythingOfType</span>(<span style="color:#e6db74">&#34;*proto.QueryReviewsRequest&#34;</span>)).
+          <span style="color:#a6e22e">Return</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">QueryReviewsRequest</span>, <span style="color:#a6e22e">cos</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">CallOption</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">QueryReviewsResponse</span> {
+               <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">QueryReviewsResponse</span>{
+                    <span style="color:#a6e22e">Reviews</span>: []<span style="color:#f92672">*</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Review</span>{
+                         <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Review</span>{
+                              <span style="color:#a6e22e">Id</span>:          <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">ProductID</span>,
+                              <span style="color:#a6e22e">CreatedTime</span>: <span style="color:#a6e22e">ptypes</span>.<span style="color:#a6e22e">TimestampNow</span>(),
+                         },
+                    },
+               }
+          }, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">QueryReviewsRequest</span>, <span style="color:#a6e22e">cos</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">CallOption</span>) <span style="color:#66d9ef">error</span> {
+               <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+          })
+
+     <span style="color:#a6e22e">svc</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">CreateProductsService</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">configFile</span>, <span style="color:#a6e22e">detailsCli</span>, <span style="color:#a6e22e">ratingsCli</span>, <span style="color:#a6e22e">reviewsCli</span>)
+     <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+          <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;create product service error,%+v&#34;</span>, <span style="color:#a6e22e">err</span>)
+     }
+
+     <span style="color:#75715e">// 表格驱动测试
+</span><span style="color:#75715e"></span>     <span style="color:#a6e22e">tests</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">struct</span> {
+          <span style="color:#a6e22e">name</span>     <span style="color:#66d9ef">string</span>
+          <span style="color:#a6e22e">id</span>       <span style="color:#66d9ef">uint64</span>
+          <span style="color:#a6e22e">expected</span> <span style="color:#66d9ef">bool</span>
+     }{
+          {<span style="color:#e6db74">&#34;id=1&#34;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#66d9ef">true</span>},
+     }
+
+     <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">test</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">tests</span> {
+          <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">name</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+               <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">id</span>)
+
+               <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">test</span>.<span style="color:#a6e22e">expected</span> {
+                    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">NoError</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">err</span>)
+               } <span style="color:#66d9ef">else</span> {
+                    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">err</span>)
+               }
+          })
+     }
 }</code></pre></div>
 <h2 id="makefile">Makefile</h2>
 
