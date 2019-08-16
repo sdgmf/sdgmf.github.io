@@ -4,7 +4,7 @@ date: 2019-07-24T15:16:41+08:00
 lastmod: 2019-07-24T15:16:41+08:00
 draft: false
 categories: ["golang"]
-tags: ["golang", "dependency-inject","test","log","errors","microservice"]
+tags: ["golang", "dependency-inject","test","log","errors","microservice","grpc"]
 description: Golang项目示例
 ---
 
@@ -718,20 +718,10 @@ r.Use(ginprom.New(r).Middleware()) // 添加prometheus 监控
 ```go
           gs = grpc.NewServer(
                grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-                    grpc_ctxtags.StreamServerInterceptor(),
-                    grpc_opentracing.StreamServerInterceptor(),
                     grpc_prometheus.StreamServerInterceptor,
-                    grpc_zap.StreamServerInterceptor(logger),
-                    grpc_recovery.StreamServerInterceptor(),
-                    otgrpc.OpenTracingStreamServerInterceptor(tracer),
                )),
                grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-                    grpc_ctxtags.UnaryServerInterceptor(),
-                    grpc_opentracing.UnaryServerInterceptor(),
                     grpc_prometheus.UnaryServerInterceptor,
-                    grpc_zap.UnaryServerInterceptor(logger),
-                    grpc_recovery.UnaryServerInterceptor(),
-                    otgrpc.OpenTracingServerInterceptor(tracer),
                )),
           )
 ```
@@ -744,11 +734,9 @@ r.Use(ginprom.New(r).Middleware()) // 添加prometheus 监控
           grpc.WithInsecure(),
           grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(
                grpc_prometheus.UnaryClientInterceptor,
-               otgrpc.OpenTracingClientInterceptor(tracer)),
           ),
           grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(
                grpc_prometheus.StreamClientInterceptor,
-               otgrpc.OpenTracingStreamClientInterceptor(tracer)),
           ),
      )
 ```
@@ -1142,6 +1130,96 @@ dashboard预览
 
 TODO
 
+## 调用链跟踪
+
+### Jaeger
+
+[Jaeger](https://github.com/jaegertracing/jaeger) 是Uber开源的基于[Opentracing](https://opentracing.io/) 的一个实现，类似于zipkin。
+
+创建internal/pkg/jaeger/jaeger.go
+
+```go
+package jaeger
+
+import (
+     "github.com/google/wire"
+     "github.com/opentracing/opentracing-go"
+     "github.com/pkg/errors"
+     "github.com/spf13/viper"
+     "github.com/uber/jaeger-client-go/config"
+     "github.com/uber/jaeger-lib/metrics/prometheus"
+     "go.uber.org/zap"
+)
+
+func NewConfiguration(v *viper.Viper, logger *zap.Logger) (*config.Configuration, error) {
+     var (
+          err error
+          c   = new(config.Configuration)
+     )
+
+     if err = v.UnmarshalKey("jaeger", c); err != nil {
+          return nil, errors.Wrap(err, "unmarshal jaeger configuration error")
+     }
+
+     logger.Info("load jaeger configuration success")
+
+     return c, nil
+}
+
+func New(c *config.Configuration) (opentracing.Tracer, error) {
+
+     metricsFactory := prometheus.New()
+     tracer, _, err := c.NewTracer(config.Metrics(metricsFactory))
+
+     if err != nil {
+          return nil, errors.Wrap(err, "create jaeger tracer error")
+     }
+
+     return tracer, nil
+}
+
+var ProviderSet = wire.NewSet(New, NewConfiguration)
+
+```
+
+### Grpc
+
+修改internal/pkg/transports/grpc/server.go
+
+```go
+          gs = grpc.NewServer(
+               grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+                    otgrpc.OpenTracingStreamServerInterceptor(tracer),
+               )),
+               grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+                    otgrpc.OpenTracingServerInterceptor(tracer),
+               )),
+          )
+```
+
+修改internal/pkg/transports/grpc/client.go
+
+```go
+     conn, err := grpc.DialContext(ctx, target, grpc.WithInsecure(),
+          grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(
+               otgrpc.OpenTracingClientInterceptor(tracer)),
+          ),
+          grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(
+               otgrpc.OpenTracingStreamClientInterceptor(tracer)),
+          ),)
+
+```
+
+### Gin
+
+修改internal/pkg/transports/http/http.go
+
+```go
+import "github.com/opentracing-contrib/go-gin/ginhttp"
+
+r.Use(ginhttp.Middleware(tracer))
+```
+
 ## 单元测试
 
 ### 存储层测试
@@ -1154,24 +1232,25 @@ TODO
 package repositorys
 
 import (
-    "github.com/google/wire"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/config"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/database"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/log"
+     "github.com/google/wire"
+     "github.com/sdgmf/go-project-sample/internal/pkg/config"
+     "github.com/sdgmf/go-project-sample/internal/pkg/database"
+     "github.com/sdgmf/go-project-sample/internal/pkg/log"
 )
 
 
 
 var testProviderSet = wire.NewSet(
-    log.ProviderSet,
-    config.ProviderSet,
-    database.ProviderSet,
-    ProviderSet,
+     log.ProviderSet,
+     config.ProviderSet,
+     database.ProviderSet,
+     ProviderSet,
 )
 
-func CreateProductRepository(f string) (ProductsRepository, error) {
-    panic(wire.Build(testProviderSet))
+func CreateDetailRepository(f string) (DetailsRepository, error) {
+     panic(wire.Build(testProviderSet))
 }
+
 
 ```
 
@@ -1181,42 +1260,42 @@ func CreateProductRepository(f string) (ProductsRepository, error) {
 package repositorys
 
 import (
-    "flag"
-    "github.com/stretchr/testify/assert"
-    "testing"
+     "flag"
+     "github.com/stretchr/testify/assert"
+     "testing"
 )
 
-var configFile = flag.String("f", "app.yml", "set config file which viper will loading.")
+var configFile = flag.String("f", "details.yml", "set config file which viper will loading.")
 
-func TestProductsRepository_Get(t *testing.T) {
-    flag.Parse()
+func TestDetailsRepository_Get(t *testing.T) {
+     flag.Parse()
 
-    sto, err := CreateProductRepository(*configFile)
-    if err != nil {
-        t.Fatalf("create product Repository error,%+v", err)
-    }
+     sto, err := CreateDetailRepository(*configFile)
+     if err != nil {
+          t.Fatalf("create product Repository error,%+v", err)
+     }
 
-    tests := []struct {
-        name     string
-        id       uint64
-        expected bool
-    }{
-        {"1+1", 1, true},
-        {"2+3", 2, false},
-        {"4+5", 3, false},
-    }
+     tests := []struct {
+          name     string
+          id       uint64
+          expected bool
+     }{
+          {"id=1", 1, true},
+          {"id=2", 2, true},
+          {"id=3", 3, true},
+     }
 
-    for _, test := range tests {
-        t.Run(test.name, func(t *testing.T) {
-            _, err := sto.Get(test.id)
+     for _, test := range tests {
+          t.Run(test.name, func(t *testing.T) {
+               _, err := sto.Get(test.id)
 
-            if test.expected {
-                assert.NoError(t, err )
-            }else {
-                assert.Error(t, err)
-            }
-        })
-    }
+               if test.expected {
+                    assert.NoError(t, err )
+               }else {
+                    assert.Error(t, err)
+               }
+          })
+     }
 }
 
 ```
@@ -1224,21 +1303,20 @@ func TestProductsRepository_Get(t *testing.T) {
 运行测试
 
 ``` bash
-cd internal/pkg/repositorys
- go test . -v -f ../../../configs/proxy.yml 
+go test -v ./internal/app/details/repositorys -f $(pwd)/configs/details.yml
 
-=== RUN   TestProductsRepository_Get
-2019/07/26 14:29:28 use config file:../../../configs/proxy.yml
-2019-07-26T14:29:28.301+0800    INFO    load log options success        {"url": "root:xxx@tcp(127.0.0.1:3306)/shop?charset=utf8&parseTime=True&loc=Local"}
-=== RUN   TestProductsRepository_Get/1+1
-=== RUN   TestProductsRepository_Get/2+3
-=== RUN   TestProductsRepository_Get/4+5
---- PASS: TestProductsRepository_Get (0.04s)
-    --- PASS: TestProductsRepository_Get/1+1 (0.00s)
-    --- PASS: TestProductsRepository_Get/2+3 (0.00s)
-    --- PASS: TestProductsRepository_Get/4+5 (0.00s)
+=== RUN   TestDetailsRepository_Get
+use config file -> /Users/fengbin/code/go/go-project-sample/configs/details.yml
+=== RUN   TestDetailsRepository_Get/id=1
+=== RUN   TestDetailsRepository_Get/id=2
+=== RUN   TestDetailsRepository_Get/id=3
+--- PASS: TestDetailsRepository_Get (0.11s)
+    --- PASS: TestDetailsRepository_Get/id=1 (0.00s)
+    --- PASS: TestDetailsRepository_Get/id=2 (0.00s)
+    --- PASS: TestDetailsRepository_Get/id=3 (0.00s)
 PASS
-ok      github.com/zlgwzy/go-project-sample/internal/pkg/repositorys    0.049s
+ok      github.com/sdgmf/go-project-sample/internal/app/details/repositorys     0.128s
+
 ```
 
 ### 逻辑层测试
@@ -1246,10 +1324,10 @@ ok      github.com/zlgwzy/go-project-sample/internal/pkg/repositorys    0.049s
 通过mockery自动生成mock对象.
 
 ```go
-    mockery --all --inpkg
+    mockery --all
 ```
 
-添加services/wire.go
+添加internal/app/details/services/wire.go
 
 ```go
 // +build wireinject
@@ -1257,81 +1335,22 @@ ok      github.com/zlgwzy/go-project-sample/internal/pkg/repositorys    0.049s
 package services
 
 import (
-    "github.com/google/wire"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/config"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/database"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/log"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/repositorys"
+     "github.com/google/wire"
+     "github.com/sdgmf/go-project-sample/internal/pkg/config"
+     "github.com/sdgmf/go-project-sample/internal/pkg/database"
+     "github.com/sdgmf/go-project-sample/internal/pkg/log"
+     "github.com/sdgmf/go-project-sample/internal/app/details/repositorys"
 )
 
 var testProviderSet = wire.NewSet(
-    log.ProviderSet,
-    config.ProviderSet,
-    database.ProviderSet,
-    ProviderSet,
+     log.ProviderSet,
+     config.ProviderSet,
+     database.ProviderSet,
+     ProviderSet,
 )
 
-func CreateProductsService(cf string, sto repositorys.ProductsRepository) (ProductsService, error) {
-    panic(wire.Build(testProviderSet))
-}
-
-```
-
-编写单元测试services/products_test.go
-
-```go
-package services
-
-import (
-    "flag"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/mock"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/models"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/repositorys"
-    "testing"
-)
-
-var configFile = flag.String("f", "proxy.yml", "set config file which viper will loading.")
-
-func TestProductsRepository_Get(t *testing.T) {
-    flag.Parse()
-
-    sto := new(repositorys.MockProductsRepository)
-
-    sto.On("Get", mock.AnythingOfType("uint64")).Return(func(ID uint64) (p *models.Product) {
-        return &models.Product{
-            ID: ID,
-        }
-    }, func(ID uint64) error {
-        return nil
-    })
-
-    svc, err := CreateProductsService(*configFile, sto)
-    if err != nil {
-        t.Fatalf("create product serviceerror,%+v", err)
-    }
-
-    // 表格驱动测试
-    tests := []struct {
-        name     string
-        id       uint64
-        expected uint64
-    }{
-        {"1+1", 1, 1},
-        {"2+3", 2, 2},
-        {"4+5", 3, 3},
-    }
-
-    for _, test := range tests {
-        t.Run(test.name, func(t *testing.T) {
-            p, err := svc.Get(test.id)
-            if err != nil {
-                t.Fatalf("product service get proudct error,%+v", err)
-            }
-
-            assert.Equal(t, test.expected, p.ID)
-        })
-    }
+func CreateDetailsService(cf string, sto repositorys.DetailsRepository) (DetailsService, error) {
+     panic(wire.Build(testProviderSet))
 }
 
 
@@ -1339,166 +1358,318 @@ func TestProductsRepository_Get(t *testing.T) {
 
 存储层使用生成的MockProductsRepository，可以直接在用例中定义Mock方法的返回值。
 
-### 控制层测试
-
-添加controllers/products_test.go,利用httptest进行测试
+创建 services/details_test.go
 
 ```go
+package services
 
+import (
+     "flag"
+     "github.com/sdgmf/go-project-sample/internal/pkg/models"
+     "github.com/sdgmf/go-project-sample/mocks"
+     "github.com/stretchr/testify/assert"
+     "github.com/stretchr/testify/mock"
+     "testing"
+)
+
+var configFile = flag.String("f", "details.yml", "set config file which viper will loading.")
+
+func TestDetailsRepository_Get(t *testing.T) {
+     flag.Parse()
+
+     sto := new(mocks.DetailsRepository)
+
+     sto.On("Get", mock.AnythingOfType("uint64")).Return(func(ID uint64) (p *models.Detail) {
+          return &models.Detail{
+               ID: ID,
+          }
+     }, func(ID uint64) error {
+          return nil
+     })
+
+     svc, err := CreateDetailsService(*configFile, sto)
+     if err != nil {
+          t.Fatalf("create product serviceerror,%+v", err)
+     }
+
+     // 表格驱动测试
+     tests := []struct {
+          name     string
+          id       uint64
+          expected uint64
+     }{
+          {"1+1", 1, 1},
+          {"2+3", 2, 2},
+          {"4+5", 3, 3},
+     }
+
+     for _, test := range tests {
+          t.Run(test.name, func(t *testing.T) {
+               p, err := svc.Get(test.id)
+               if err != nil {
+                    t.Fatalf("product service get proudct error,%+v", err)
+               }
+
+               assert.Equal(t, test.expected, p.ID)
+          })
+     }
+}
+
+```
+
+### 控制层测试
+
+添加controllers/details_test.go,利用httptest进行测试
+
+```go
 package controllers
 
 import (
-    "encoding/json"
-    "flag"
-    "fmt"
-    "github.com/gin-gonic/gin"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/mock"
-    "io/ioutil"
-    "net/http/httptest"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/models"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/repositorys"
-    "testing"
+     "encoding/json"
+     "flag"
+     "fmt"
+     "github.com/gin-gonic/gin"
+     "github.com/sdgmf/go-project-sample/internal/pkg/models"
+     "github.com/sdgmf/go-project-sample/mocks"
+     "github.com/stretchr/testify/assert"
+     "github.com/stretchr/testify/mock"
+     "io/ioutil"
+     "net/http/httptest"
+     "testing"
 )
 
 var r *gin.Engine
-var configFile = flag.String("f", "proxy.yml", "set config file which viper will loading.")
+var configFile = flag.String("f", "details.yml", "set config file which viper will loading.")
 
 func setup() {
-    r = gin.New()
+     r = gin.New()
 }
 
-func TestProductsController_Get(t *testing.T) {
-    flag.Parse()
-    setup()
+func TestDetailsController_Get(t *testing.T) {
+     flag.Parse()
+     setup()
 
-    sto := new(repositorys.MockProductsRepository)
+     sto := new(mocks.DetailsRepository)
 
-    sto.On("Get", mock.AnythingOfType("uint64")).Return(func(ID uint64) (p *models.Product) {
-        return &models.Product{
-            ID: ID,
-        }
-    }, func(ID uint64) error {
-        return nil
-    })
+     sto.On("Get", mock.AnythingOfType("uint64")).Return(func(ID uint64) (p *models.Detail) {
+          return &models.Detail{
+               ID: ID,
+          }
+     }, func(ID uint64) error {
+          return nil
+     })
 
-    c, err := CreateProductsController(*configFile, sto)
-    if err != nil {
-        t.Fatalf("create product serviceerror,%+v", err)
-    }
+     c, err := CreateDetailsController(*configFile, sto)
+     if err != nil {
+          t.Fatalf("create product serviceerror,%+v", err)
+     }
 
-    r.GET("/products/:id", c.Get)
+     r.GET("/proto/:id", c.Get)
 
-    tests := []struct {
-        name     string
-        id       uint64
-        expected uint64
-    }{
-        {"1", 1, 1},
-        {"2", 2, 2},
-        {"3", 3, 3},
-    }
+     tests := []struct {
+          name     string
+          id       uint64
+          expected uint64
+     }{
+          {"1", 1, 1},
+          {"2", 2, 2},
+          {"3", 3, 3},
+     }
 
-    for _, test := range tests {
-        t.Run(test.name, func(t *testing.T) {
-            uri := fmt.Sprintf("/products/%d", test.id)
-            // 构造get请求
-            req := httptest.NewRequest("GET", uri, nil)
-            // 初始化响应
-            w := httptest.NewRecorder()
+     for _, test := range tests {
+          t.Run(test.name, func(t *testing.T) {
+               uri := fmt.Sprintf("/proto/%d", test.id)
+               // 构造get请求
+               req := httptest.NewRequest("GET", uri, nil)
+               // 初始化响应
+               w := httptest.NewRecorder()
 
-            // 调用相应的controller接口
-            r.ServeHTTP(w, req)
+               // 调用相应的controller接口
+               r.ServeHTTP(w, req)
 
-            // 提取响应
-            rs := w.Result()
-            defer func() {
-                _ = rs.Body.Close()
-            }()
+               // 提取响应
+               rs := w.Result()
+               defer func() {
+                    _ = rs.Body.Close()
+               }()
 
-            // 读取响应body
-            body, _ := ioutil.ReadAll(rs.Body)
-            p := new(models.Product)
-            err := json.Unmarshal(body, p)
-            if err != nil {
-                t.Errorf("unmarshal response body error:%v", err)
-            }
+               // 读取响应body
+               body, _ := ioutil.ReadAll(rs.Body)
+               p := new(models.Detail)
+               err := json.Unmarshal(body, p)
+               if err != nil {
+                    t.Errorf("unmarshal response body error:%v", err)
+               }
 
-            assert.Equal(t, test.expected, p.ID)
-        })
-    }
+               assert.Equal(t, test.expected, p.ID)
+          })
+     }
 
 }
+
 
 ```
 
 ### grpc测试
 
-添加grpcservers/products_test.go
+#### 测试Server
+
+添加grpcservers/details_test.go
 
 ```go
 package grpcservers
 
 import (
-    "context"
-    "flag"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/mock"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/models"
-    "github.com/zlgwzy/go-project-sample/internal/pkg/services"
-    "github.com/zlgwzy/go-project-sample/api/proto"
-    "testing"
+     "context"
+     "flag"
+     "github.com/sdgmf/go-project-sample/api/proto"
+     "github.com/sdgmf/go-project-sample/internal/pkg/models"
+     "github.com/sdgmf/go-project-sample/mocks"
+     "github.com/stretchr/testify/assert"
+     "github.com/stretchr/testify/mock"
+     "testing"
 )
 
-var configFile = flag.String("f", "proxy.yml", "set config file which viper will loading.")
+var configFile = flag.String("f", "details.yml", "set config file which viper will loading.")
 
-func TestProductsService_Get(t *testing.T) {
-    flag.Parse()
+func TestDetailsService_Get(t *testing.T) {
+     flag.Parse()
 
-    service := new(services.MockProductsService)
+     service := new(mocks.DetailsService)
 
-    service.On("Get", mock.AnythingOfType("uint64")).Return(func(ID uint64) (p *models.Product) {
-        return &models.Product{
-            ID: ID,
-        }
-    }, func(ID uint64) error {
-        return nil
-    })
+     service.On("Get", mock.AnythingOfType("uint64")).Return(func(ID uint64) (p *models.Detail) {
+          return &models.Detail{
+               ID: ID,
+          }
+     }, func(ID uint64) error {
+          return nil
+     })
 
-    server, err := CreateProductsServer(*configFile, service)
-    if err != nil {
-        t.Fatalf("create product server error,%+v", err)
-    }
+     server, err := CreateDetailsServer(*configFile, service)
+     if err != nil {
+          t.Fatalf("create product server error,%+v", err)
+     }
 
-    // 表格驱动测试
-    tests := []struct {
-        name     string
-        id       uint64
-        expected uint64
-    }{
-        {"1+1", 1, 1},
-        {"2+3", 2, 2},
-        {"4+5", 3, 3},
-    }
+     // 表格驱动测试
+     tests := []struct {
+          name     string
+          id       uint64
+          expected uint64
+     }{
+          {"1+1", 1, 1},
+          {"2+3", 2, 2},
+          {"4+5", 3, 3},
+     }
 
-    for _, test := range tests {
-        t.Run(test.name, func(t *testing.T) {
-            req := &proto.ProductGetRequest{
-                ID: test.id,
-            }
-            p, err := server.Get(context.Background(), req)
-            if err != nil {
-                t.Fatalf("product service get proudct error,%+v", err)
-            }
+     for _, test := range tests {
+          t.Run(test.name, func(t *testing.T) {
+               req := &proto.GetDetailRequest{
+                    Id: test.id,
+               }
+               p, err := server.Get(context.Background(), req)
+               if err != nil {
+                    t.Fatalf("product service get proudct error,%+v", err)
+               }
 
-            assert.Equal(t, test.expected, p.ID)
-        })
-    }
+               assert.Equal(t, test.expected, p.Id)
+          })
+     }
 
 }
 
 ```
 
+#### mock grpc client
+
+/internal/app/products/services/products_test.go:
+
+```go
+package services
+
+import (
+     "context"
+     "flag"
+     "github.com/golang/protobuf/ptypes"
+     "github.com/sdgmf/go-project-sample/api/proto"
+     "github.com/sdgmf/go-project-sample/mocks"
+     "github.com/stretchr/testify/assert"
+     "github.com/stretchr/testify/mock"
+     "google.golang.org/grpc"
+     "testing"
+)
+
+var configFile = flag.String("f", "products.yml", "set config file which viper will loading.")
+
+func TestDefaultProductsService_Get(t *testing.T) {
+     flag.Parse()
+
+     detailsCli := new(mocks.DetailsClient)
+     detailsCli.On("Get", mock.Anything, mock.Anything).
+          Return(func(ctx context.Context, req *proto.GetDetailRequest, cos ...grpc.CallOption) *proto.Detail {
+               return &proto.Detail{
+                    Id:          req.Id,
+                    CreatedTime: ptypes.TimestampNow(),
+               }
+          }, func(ctx context.Context, req *proto.GetDetailRequest, cos ...grpc.CallOption) error {
+               return nil
+          })
+
+     ratingsCli := new(mocks.RatingsClient)
+
+     ratingsCli.On("Get", context.Background(), mock.AnythingOfType("*proto.GetRatingRequest")).
+          Return(func(ctx context.Context, req *proto.GetRatingRequest, cos ...grpc.CallOption) *proto.Rating {
+               return &proto.Rating{
+                    Id:          req.ProductID,
+                    UpdatedTime: ptypes.TimestampNow(),
+               }
+          }, func(ctx context.Context, req *proto.GetRatingRequest, cos ...grpc.CallOption) error {
+               return nil
+          })
+
+     reviewsCli := new(mocks.ReviewsClient)
+
+     reviewsCli.On("Query", context.Background(), mock.AnythingOfType("*proto.QueryReviewsRequest")).
+          Return(func(ctx context.Context, req *proto.QueryReviewsRequest, cos ...grpc.CallOption) *proto.QueryReviewsResponse {
+               return &proto.QueryReviewsResponse{
+                    Reviews: []*proto.Review{
+                         &proto.Review{
+                              Id:          req.ProductID,
+                              CreatedTime: ptypes.TimestampNow(),
+                         },
+                    },
+               }
+          }, func(ctx context.Context, req *proto.QueryReviewsRequest, cos ...grpc.CallOption) error {
+               return nil
+          })
+
+     svc, err := CreateProductsService(*configFile, detailsCli, ratingsCli, reviewsCli)
+     if err != nil {
+          t.Fatalf("create product service error,%+v", err)
+     }
+
+     // 表格驱动测试
+     tests := []struct {
+          name     string
+          id       uint64
+          expected bool
+     }{
+          {"id=1", 1, true},
+     }
+
+     for _, test := range tests {
+          t.Run(test.name, func(t *testing.T) {
+               _, err := svc.Get(context.Background(), test.id)
+
+               if test.expected {
+                    assert.NoError(t, err)
+               } else {
+                    assert.Error(t, err)
+               }
+          })
+     }
+}
+
+```
 
 ## Makefile
 
