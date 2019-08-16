@@ -1679,34 +1679,63 @@ func TestDefaultProductsService_Get(t *testing.T) {
 编写Makefile
 
 ``` makefile
+apps = 'products' 'details' 'ratings' 'reviews'
 .PHONY: run
-run:
-     go run ./cmd -f cmd/app.yml
+run: proto wire
+     for app in $(apps) ;\
+     do \
+           go run ./cmd/$$app -f configs/$$app.yml  & \
+     done
 .PHONY: wire
 wire:
-    wire ./...
+     wire ./...
 .PHONY: test
-test:
-    go test -v ./... -f `pwd`/cmd/app.yml -covermode=count -coverprofile=dist/test/cover.out
-
+test: mock
+     for app in $(apps) ;\
+     do \
+          go test -v ./internal/app/$$app/... -f `pwd`/configs/$$app.yml -covermode=count -coverprofile=dist/cover-$$app.out ;\
+     done
 .PHONY: build
 build:
-    GOOS=linux GOARCH="amd64" go build ./cmd -o dist/sample5-linux-amd64
-    GOOS=darwin GOARCH="amd64" go build ./cmd -o dist/sample5-darwin-amd64
+     for app in $(apps) ;\
+     do \
+          GOOS=linux GOARCH="amd64" go build -o dist/$$app-linux-amd64 ./cmd/$$app/; \
+          GOOS=darwin GOARCH="amd64" go build -o dist/$$app-darwin-amd64 ./cmd/$$app/; \
+     done
 .PHONY: cover
-cover:
-    go tool cover -html=dist/test/cover.out
+cover: test
+     for app in $(apps) ;\
+     do \
+          go tool cover -html=dist/cover-$$app.out; \
+     done
 .PHONY: mock
 mock:
-    mockery --all --inpkg
+     mockery --all
 .PHONY: lint
 lint:
-    golint ./...
+     golint ./...
 .PHONY: proto
 proto:
-    protoc -I api/proto ./api/proto/products.proto --go_out=plugins=grpc:api/proto
-docker: build
-    docker-compose -f docker/sample/docker-compose.yml up
+     protoc -I api/proto ./api/proto/* --go_out=plugins=grpc:api/proto
+.PHONY: dash
+dash: # create grafana dashboard
+      for app in $(apps) ;\
+      do \
+           jsonnet -J ./grafana/grafonnet-lib   -o ./grafana/dashboards/$$app.json  --ext-str app=$$app ./grafana/dashboard.jsonnet ;\
+      done
+.PHONY: pubdash
+pubdash:
+      for app in $(apps) ;\
+      do \
+           jsonnet -J ./grafana/grafonnet-lib  -o ./grafana/dashboards-api/$$app-api.json  --ext-str app=$$app  ./grafana/dashboard-api.jsonnet ; \
+           curl -X DELETE --user admin:admin  -H "Content-Type: application/json" 'http://localhost:3000/api/dashboards/db/$$app'; \
+           curl -x POST --user admin:admin  -H "Content-Type: application/json" --data-binary "@./grafana/dashboards-api/$$app-api.json" http://localhost:3000/api/dashboards/db ; \
+      done
+.PHONY: docker
+docker-compose: build dash
+     docker-compose -f deployments/docker-compose.yml up --build -d
+all: lint cover docker
+
 ```
 
 1. make run 运行项目
