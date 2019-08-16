@@ -29,29 +29,11 @@
     </item>
     
     <item>
-      <title>errors</title>
-      <link>https://sdgmf.github.io/tags/errors/</link>
-      <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
-      
-      <guid>https://sdgmf.github.io/tags/errors/</guid>
-      <description></description>
-    </item>
-    
-    <item>
       <title>grpc</title>
       <link>https://sdgmf.github.io/tags/grpc/</link>
       <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
       
       <guid>https://sdgmf.github.io/tags/grpc/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>log</title>
-      <link>https://sdgmf.github.io/tags/log/</link>
-      <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
-      
-      <guid>https://sdgmf.github.io/tags/log/</guid>
       <description></description>
     </item>
     
@@ -65,11 +47,11 @@
     </item>
     
     <item>
-      <title>test</title>
-      <link>https://sdgmf.github.io/tags/test/</link>
+      <title>unit-test</title>
+      <link>https://sdgmf.github.io/tags/unit-test/</link>
       <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
       
-      <guid>https://sdgmf.github.io/tags/test/</guid>
+      <guid>https://sdgmf.github.io/tags/unit-test/</guid>
       <description></description>
     </item>
     
