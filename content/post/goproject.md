@@ -4,11 +4,11 @@ date: 2019-07-24T15:16:41+08:00
 lastmod: 2019-07-24T15:16:41+08:00
 draft: false
 categories: ["golang"]
-tags: ["golang", "dependency-inject","test","log","errors","microservice","grpc"]
+tags: ["golang", "dependency-inject","unit-test","microservice","grpc"]
 description: Golang项目示例
 ---
 
-本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、框架选择等方面介绍Go语言项目的开发经验.
+本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、服务治理、框架选择等方面介绍Go语言项目的开发经验.
 <!--more-->
 
 ## 目的
