@@ -1744,34 +1744,62 @@ ok      github.com/sdgmf/go-project-sample/internal/app/details/repositorys     
 <h2 id="makefile">Makefile</h2>
 
 <p>编写Makefile</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-makefile" data-lang="makefile"><span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> run
-<span style="color:#a6e22e">run</span><span style="color:#f92672">:</span>
-     go run ./cmd -f cmd/app.yml
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-makefile" data-lang="makefile">apps <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;products&#39;</span> <span style="color:#e6db74">&#39;details&#39;</span> <span style="color:#e6db74">&#39;ratings&#39;</span> <span style="color:#e6db74">&#39;reviews&#39;</span>
+<span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> run
+<span style="color:#a6e22e">run</span><span style="color:#f92672">:</span> proto wire
+     <span style="color:#66d9ef">for</span> app in <span style="color:#66d9ef">$(</span>apps<span style="color:#66d9ef">)</span> ;<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>     <span style="color:#66d9ef">do</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>           go run ./cmd/$$app -f configs/$$app.yml  &amp; <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>     <span style="color:#66d9ef">done</span>
 <span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> wire
 <span style="color:#a6e22e">wire</span><span style="color:#f92672">:</span>
-    wire ./...
+     wire ./...
 <span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> test
-<span style="color:#a6e22e">test</span><span style="color:#f92672">:</span>
-    go test -v ./... -f <span style="color:#e6db74">`</span>pwd<span style="color:#e6db74">`</span>/cmd/app.yml -covermode<span style="color:#f92672">=</span>count -coverprofile<span style="color:#f92672">=</span>dist/test/cover.out
-
+<span style="color:#a6e22e">test</span><span style="color:#f92672">:</span> mock
+     <span style="color:#66d9ef">for</span> app in <span style="color:#66d9ef">$(</span>apps<span style="color:#66d9ef">)</span> ;<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>     <span style="color:#66d9ef">do</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>          go test -v ./internal/app/$$app/... -f <span style="color:#e6db74">`</span>pwd<span style="color:#e6db74">`</span>/configs/$$app.yml -covermode<span style="color:#f92672">=</span>count -coverprofile<span style="color:#f92672">=</span>dist/cover-$$app.out ;<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>     <span style="color:#66d9ef">done</span>
 <span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> build
 <span style="color:#a6e22e">build</span><span style="color:#f92672">:</span>
-    GOOS<span style="color:#f92672">=</span>linux GOARCH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;amd64&#34;</span> go build ./cmd -o dist/sample5-linux-amd64
-    GOOS<span style="color:#f92672">=</span>darwin GOARCH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;amd64&#34;</span> go build ./cmd -o dist/sample5-darwin-amd64
+     <span style="color:#66d9ef">for</span> app in <span style="color:#66d9ef">$(</span>apps<span style="color:#66d9ef">)</span> ;<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>     <span style="color:#66d9ef">do</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>          GOOS<span style="color:#f92672">=</span>linux GOARCH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;amd64&#34;</span> go build -o dist/$$app-linux-amd64 ./cmd/$$app/; <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>          GOOS<span style="color:#f92672">=</span>darwin GOARCH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;amd64&#34;</span> go build -o dist/$$app-darwin-amd64 ./cmd/$$app/; <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>     <span style="color:#66d9ef">done</span>
 <span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> cover
-<span style="color:#a6e22e">cover</span><span style="color:#f92672">:</span>
-    go tool cover -html<span style="color:#f92672">=</span>dist/test/cover.out
+<span style="color:#a6e22e">cover</span><span style="color:#f92672">:</span> test
+     <span style="color:#66d9ef">for</span> app in <span style="color:#66d9ef">$(</span>apps<span style="color:#66d9ef">)</span> ;<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>     <span style="color:#66d9ef">do</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>          go tool cover -html<span style="color:#f92672">=</span>dist/cover-$$app.out; <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>     <span style="color:#66d9ef">done</span>
 <span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> mock
 <span style="color:#a6e22e">mock</span><span style="color:#f92672">:</span>
-    mockery --all --inpkg
+     mockery --all
 <span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> lint
 <span style="color:#a6e22e">lint</span><span style="color:#f92672">:</span>
-    golint ./...
+     golint ./...
 <span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> proto
 <span style="color:#a6e22e">proto</span><span style="color:#f92672">:</span>
-    protoc -I api/proto ./api/proto/products.proto --go_out<span style="color:#f92672">=</span>plugins<span style="color:#f92672">=</span>grpc:api/proto
-<span style="color:#a6e22e">docker</span><span style="color:#f92672">:</span> build
-    docker-compose -f docker/sample/docker-compose.yml up
+     protoc -I api/proto ./api/proto/* --go_out<span style="color:#f92672">=</span>plugins<span style="color:#f92672">=</span>grpc:api/proto
+<span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> dash
+<span style="color:#a6e22e">dash</span><span style="color:#f92672">:</span> <span style="color:#75715e"># create grafana dashboard
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">for</span> app in <span style="color:#66d9ef">$(</span>apps<span style="color:#66d9ef">)</span> ;<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>      <span style="color:#66d9ef">do</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>           jsonnet -J ./grafana/grafonnet-lib   -o ./grafana/dashboards/$$app.json  --ext-str app<span style="color:#f92672">=</span>$$app ./grafana/dashboard.jsonnet ;<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>      <span style="color:#66d9ef">done</span>
+<span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> pubdash
+<span style="color:#a6e22e">pubdash</span><span style="color:#f92672">:</span>
+      <span style="color:#66d9ef">for</span> app in <span style="color:#66d9ef">$(</span>apps<span style="color:#66d9ef">)</span> ;<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>      <span style="color:#66d9ef">do</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>           jsonnet -J ./grafana/grafonnet-lib  -o ./grafana/dashboards-api/$$app-api.json  --ext-str app<span style="color:#f92672">=</span>$$app  ./grafana/dashboard-api.jsonnet ; <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>           curl -X DELETE --user admin:admin  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#e6db74">&#39;http://localhost:3000/api/dashboards/db/$$app&#39;</span>; <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>           curl -x POST --user admin:admin  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> --data-binary <span style="color:#e6db74">&#34;@./grafana/dashboards-api/</span>$$<span style="color:#e6db74">app-api.json&#34;</span> http://localhost:3000/api/dashboards/db ; <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>      <span style="color:#66d9ef">done</span>
+<span style="color:#a6e22e">.PHONY</span><span style="color:#f92672">:</span> docker
+<span style="color:#a6e22e">docker-compose</span><span style="color:#f92672">:</span> build dash
+     docker-compose -f deployments/docker-compose.yml up --build -d
+<span style="color:#a6e22e">all</span><span style="color:#f92672">:</span> lint cover docker
 </code></pre></div>
 <ol>
 <li>make run 运行项目</li>
