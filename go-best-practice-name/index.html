@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  
+  <meta name="generator" content="Hugo 0.56.0" />
+
+  
+  <meta name="description" content="Sdgmf &#39;s Blog">
+  
+
+  
+  <link rel="apple-touch-icon" sizes="180x180" href="https://sdgmf.github.io/apple-touch-icon.png">
+
+  
+  <link rel="icon" type="image/png" sizes="32x32" href="https://sdgmf.github.io/favicon-32x32.png">
+
+  
+  <link rel="icon" type="image/png" sizes="16x16" href="https://sdgmf.github.io/favicon-16x16.png">
+
+  
+  <link rel="manifest" href="https://sdgmf.github.io/site.webmanifest">
+
+  
+  <link rel="mask-icon" href="https://sdgmf.github.io/safari-pinned-tab.svg" color="#5bbad5">
+
+  <meta name="msapplication-TileColor" content="#da532c">
+
+  <meta name="theme-color" content="#ffffff">
+
+  
+  <link rel="stylesheet" href="https://sdgmf.github.io/css/bootstrap.min.css" />
+
+  
+  <title>Golang最佳实践(基础篇)-命名 | Sdgmf &#39;s Blog</title>
+  
+
+  <style>
+body {
+  min-width: 300px;
+}
+
+.custom-navbar {
+  margin-bottom: 1em;
+  height: 60px;
+}
+
+.custom-navbar a {
+  display: inline-block; 
+  padding: 18px 0;
+  margin-right: 1em; 
+  font-weight: bold; 
+}
+
+.custom-navbar a:hover,
+.custom-navbar a:focus {
+  text-decoration: none; 
+}
+
+@media print {
+  .custom-navbar {
+    display: none;
+  }
+}
+
+article {
+  padding-bottom: 1em;
+}
+
+img {
+  max-width: 100%;
+}
+
+
+body {
+  background-color: #fff;
+}
+
+
+
+body {
+  color: #212529;
+}
+
+
+
+a {
+  color: #007bff;
+}
+
+
+
+a:hover,
+a:focus {
+  color: #0056b3;
+}
+
+
+
+.custom-navbar {
+  background-color: #797D7F;
+}
+
+
+
+.custom-navbar a {
+  color: #17202A;
+}
+
+
+
+.custom-navbar a:hover,
+.custom-navbar a:focus {
+  color: rgba(255, 255, 255, 1);
+}
+
+
+
+.container {
+  max-width: 1600px;
+}
+
+
+
+pre {
+  display: block;
+  padding: 9.5px;
+  word-break: break-all;
+  word-wrap: break-word;
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+pre code {
+  padding: 0;
+  font-size: inherit;
+  color: inherit; 
+  white-space: pre-wrap;
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+code {
+  padding: 2px 4px;
+  color: inherit; 
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: .9em;
+}
+
+
+
+blockquote,
+.blockquote {
+  padding: 10px 20px;
+  margin: 0 0 20px;
+  font-size: 1em;
+  border-left: 5px solid #6c757d;
+}
+
+</style>
+</head>
+
+<body>
+  <nav class="custom-navbar">
+  <div class="container">
+    
+    <a href="/">Posts</a>
+    
+    <a href="/tags/">Tags</a>
+    
+    <a href="/about/">About</a>
+    
+    <a href="/index.xml">RSS</a>
+    
+  </div>
+</nav>
+  
+  <div class="container">
+    <article>
+      <h1>Golang最佳实践(基础篇)-命名</h1>
+<p>
+  <small class="text-secondary">
+  
+  
+  Aug 14, 2019
+  </small>
+  
+
+<small><code><a href="https://sdgmf.github.io/tags/golang">golang</a></code></small>
+
+</p>
+
+
+<p>良好的命名和统一的编程风格可以让Go程序员容易理解你编写的程序。</p>
+
+<h2 id="基本规则">基本规则</h2>
+
+<p>Go约定使用MixedCaps或者mixedCaps的形式，而不是下划线来书写多个单词的名字。</p>
+
+<h2 id="项目名-仓库名">项目名(仓库名)</h2>
+
+<ol>
+<li>项目名(仓库名）的命名可以使用字母、数字。</li>
+<li>多个单词建议采用中划线分隔，目前github中大多数项目都是使用用中划线，不建议采用驼峰式分隔，不要使用下划线(kubernetes中的组件名称不允许使用下划线)</li>
+<li>命名可以是对项目功能的描述；也可以是一个代号（如神话人物的名字，或者希腊语）,适合采用代号的项目有两种，一种是公司的基础组件或者开源项目，一般这种项目都有详细的文档，</li>
+<li>项目名（仓库名）要尽量避免重复，如果可能重复要添加必要的前缀或者后缀做区分。</li>
+<li>命名尽量在三个单词以内。</li>
+</ol>
+
+<p>正确:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">user、user-api、user-service,product、product-search、redis-go,druid、zeus、kubernetes.</code></pre></div>
+<p>错误:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">user_api、Product</code></pre></div>
+<h2 id="包名">包名</h2>
+
+<ol>
+<li>包名应该尽量简短，简明,一个单词来命名,不要用多个单词命名。</li>
+<li>其不需要在所有源代码中是唯一的。</li>
+<li>不要使用import . &ldquo;xxx&rdquo; 导入程序包。</li>
+<li>包内struct、function不要带入包名。</li>
+<li>包名和目录名保持一致。</li>
+<li>避免使用诸如base，util或common之类的包名称,按照提供的内容命名您的包，而不是它们包含的包。</li>
+</ol>
+
+<h2 id="get方法">Get方法</h2>
+
+<blockquote>
+<p>Go不提供对Get方法和Set方法的自动支持。你自己提供Get方法和Set方法是没有错的，通常这么做是合适的。但是，在Get方法的名字中加上Get，是不符合语言习惯的，并且也没有必要。如果你有一个域叫做owner（小写，不被导出），则Get方法应该叫做Owner（大写，被导出），而不是GetOwner。对于要导出的，使用大写名字，提供了区别域和方法的钩子。Set方法，如果需要，则可以叫做SetOwner。这些名字在实际中都很好读:</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">owner</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">obj</span>.<span style="color:#a6e22e">Owner</span>()
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">owner</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">user</span> {
+    <span style="color:#a6e22e">obj</span>.<span style="color:#a6e22e">SetOwner</span>(<span style="color:#a6e22e">user</span>)
+}</code></pre></div>
+<h2 id="变量名">变量名</h2>
+
+<ol>
+<li>作用域越小，命名应该越简短。如在for循环内部用i表示index。</li>
+<li>变量名不应该包含类型，变量的名称应描述其内容，而不是内容的类型.</li>
+<li>struct 的行为方法，命名不要采用self,this等方式的命名。</li>
+</ol>
+
+<h2 id="接口名">接口名</h2>
+
+<blockquote>
+<p>按照约定，单个方法的接口使用方法名加上“er”后缀来命名，或者类似的修改来构造一个施动者名词：Reader，Writer，Formatter，CloseNotifier等。
+有许多这样的名字，最有效的方式就是尊重它们，以及它们所体现的函数名字。Read，Write，Close，Flush，String等，都具有规范的签名和含义。为了避免混淆，不要为你的方法使用这些名字，除非其具有相同的签名和含义。反过来讲，如果你的类型实现了一个和众所周知的类型具有相同含义的方法，那么就使用相同的名字和签名；例如，为你的字符串转换方法起名为String，而不是ToString。</p>
+</blockquote>
+
+<h2 id="new方法">New方法</h2>
+
+<ol>
+<li>当包里只有一个对象时，比如gin包，New方法可以直接写成gin.New(),而不是gin.NewEngine()</li>
+</ol>
+
+<h2 id="constant">Constant</h2>
+
+<ol>
+<li>建议采用驼峰式命名，不要采用全部大写，全部大写加下划线的方式很难阅读。</li>
+</ol>
+
+<h2 id="参考">参考</h2>
+
+<p><a href="https://golang.org/doc/effective_go.html">https://golang.org/doc/effective_go.html</a></p>
+
+<p><a href="https://www.kancloud.cn/kancloud/effective">https://www.kancloud.cn/kancloud/effective</a></p>
+
+<p><a href="https://dave.cheney.net/2019/01/29/you-shouldnt-name-your-variables-after-their-types-for-the-same-reason-you-wouldnt-name-your-pets-dog-or-cat">https://dave.cheney.net/2019/01/29/you-shouldnt-name-your-variables-after-their-types-for-the-same-reason-you-wouldnt-name-your-pets-dog-or-cat</a></p>
+
+<p><a href="https://dave.cheney.net/2019/01/08/avoid-package-names-like-base-util-or-common">https://dave.cheney.net/2019/01/08/avoid-package-names-like-base-util-or-common</a></p>
+
+    </article>
+  </div>
+
+  
+  
+  
+  <script>
+  window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+  ga('create', 'UA-123456789-1', 'auto');
+  ga('send', 'pageview');
+  </script>
+  <script async src='https://www.google-analytics.com/analytics.js'></script>
+  
+
+  
+<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.css" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.js"></script>
+<script>
+window.addEventListener("load", function(){
+window.cookieconsent.initialise({
+  "palette": {
+    "popup": {
+      "background": "#216942",
+      "text": "#b2d192"
+    },
+    "button": {
+      "background": "#afed71"
+    }
+  }
+})});
+</script>
+
+</body>
+
+</html>

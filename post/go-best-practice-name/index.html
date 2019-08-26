@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="author" content="Marlon Cabrera Oliveira">
+    <meta name="description" content="Hugo theme using tachyons.io & geomicons.com">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700" rel="stylesheet">
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=PT+Sans:400,700,400italic,700italic|PT+Mono&amp;subset=latin,cyrillic">
+    <link rel="stylesheet" href="/css/tachyons.css">
+    <style>
+        .geomicon { width: 1.5em; height: 1.5em; color: #405660; }
+        body{ font-family:'PT Sans', sans-serif; }
+    </style>
+    
+    
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-144925501-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+  </head>
+  <body>
+      <header class="tc pal bb b-near-white">
+    <h1 class="f6 thin i link-child"><a href="/">Sdgmf 's Blog</a></h1>
+        <nav>
+          <ul class="list pln">
+            <li class="dib prm"><a href="/">Home</a></li>
+            <li class="dib prm"><a href="/post">Blog</a></li>
+            <li class="dib prm"><a href="/about">About</a></li>
+          </ul>
+        </nav>
+        </header>
+
+
+  <main class="pal">
+
+    <h1>Golang最佳实践(基础篇)-命名</h1>
+    <h2>Aug 12, 2019</h2>
+      
+
+<p>编写好的Go程序，理解它的特性和风格是非常重要,了解Go语言编程中已有的约定也非常重要.
+良好的命名和统一的编程风格可以让Go程序员容易理解你编写的程序。</p>
+
+<h2 id="基本规则">基本规则</h2>
+
+<p>Go约定使用MixedCaps或者mixedCaps的形式，而不是下划线来书写多个单词的名字。</p>
+
+<h2 id="项目名-仓库名">项目名(仓库名)</h2>
+
+<ol>
+<li>项目名(仓库名）的命名可以使用字母、数字。</li>
+<li>多个单词建议采用中划线分隔，目前github中大多数项目都是使用用中划线，不建议采用驼峰式分隔，不要使用下划线(kubernetes中的组件名称不允许使用下划线)</li>
+<li>命名可以是对项目功能的描述；也可以是一个代号（如神话人物的名字，或者希腊语）,适合采用代号的项目有两种，一种是公司的基础组件或者开源项目，一般这种项目都有详细的文档，</li>
+<li>项目名（仓库名）要尽量避免重复，如果可能重复要添加必要的前缀或者后缀做区分。</li>
+<li>命名尽量在三个单词以内。</li>
+</ol>
+
+<p>正确:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">user、user-api、user-service,product、product-search、redis-go,druid、zeus、kubernetes.</code></pre></div>
+<p>错误:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">user_api、Product</code></pre></div>
+<h2 id="包名">包名</h2>
+
+<ol>
+<li>简短，简明，能引起共鸣的。</li>
+<li>程序包使用小写，一个单词的名字。</li>
+<li>其不需要在所有源代码中是唯一的。</li>
+<li>不要使用import . &ldquo;xxx&rdquo; 导入程序包。</li>
+<li>包内struct、function不要带入包名。</li>
+<li>包名和目录名保持一致。</li>
+<li>避免使用诸如base，util或common之类的包名称,按照提供的内容命名您的包，而不是它们包含的包。</li>
+</ol>
+
+<h2 id="get方法">Get方法</h2>
+
+<blockquote>
+<p>Go不提供对Get方法和Set方法的自动支持。你自己提供Get方法和Set方法是没有错的，通常这么做是合适的。但是，在Get方法的名字中加上Get，是不符合语言习惯的，并且也没有必要。如果你有一个域叫做owner（小写，不被导出），则Get方法应该叫做Owner（大写，被导出），而不是GetOwner。对于要导出的，使用大写名字，提供了区别域和方法的钩子。Set方法，如果需要，则可以叫做SetOwner。这些名字在实际中都很好读:</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">owner</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">obj</span>.<span style="color:#a6e22e">Owner</span>()
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">owner</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">user</span> {
+    <span style="color:#a6e22e">obj</span>.<span style="color:#a6e22e">SetOwner</span>(<span style="color:#a6e22e">user</span>)
+}</code></pre></div>
+<h2 id="变量名">变量名</h2>
+
+<ol>
+<li>作用域越小，命名应该越简短。如在for循环内部用i表示index。</li>
+<li>变量名不应该包含类型，变量的名称应描述其内容，而不是内容的类型.</li>
+<li>struct 的行为方法，命名不要采用self,this等方式的命名。</li>
+</ol>
+
+<h2 id="接口名">接口名</h2>
+
+<blockquote>
+<p>按照约定，单个方法的接口使用方法名加上“er”后缀来命名，或者类似的修改来构造一个施动者名词：Reader，Writer，Formatter，CloseNotifier等。
+有许多这样的名字，最有效的方式就是尊重它们，以及它们所体现的函数名字。Read，Write，Close，Flush，String等，都具有规范的签名和含义。为了避免混淆，不要为你的方法使用这些名字，除非其具有相同的签名和含义。反过来讲，如果你的类型实现了一个和众所周知的类型具有相同含义的方法，那么就使用相同的名字和签名；例如，为你的字符串转换方法起名为String，而不是ToString。</p>
+</blockquote>
+
+<h2 id="new方法">New方法</h2>
+
+<ol>
+<li>当包里只有一个对象时，比如gin包，New方法可以直接写成gin.New(),而不是gin.NewEngine()</li>
+</ol>
+
+<h2 id="constant">Constant</h2>
+
+<ol>
+<li>建议采用驼峰式命名，不要采用全部大写，全部大写加下划线的方式很难阅读。</li>
+</ol>
+
+<h2 id="参考">参考</h2>
+
+<p><a href="https://golang.org/doc/effective_go.html">https://golang.org/doc/effective_go.html</a></p>
+
+<p><a href="https://www.kancloud.cn/kancloud/effective">https://www.kancloud.cn/kancloud/effective</a></p>
+
+<p><a href="https://dave.cheney.net/2019/01/29/you-shouldnt-name-your-variables-after-their-types-for-the-same-reason-you-wouldnt-name-your-pets-dog-or-cat">https://dave.cheney.net/2019/01/29/you-shouldnt-name-your-variables-after-their-types-for-the-same-reason-you-wouldnt-name-your-pets-dog-or-cat</a></p>
+
+<p><a href="https://dave.cheney.net/2019/01/08/avoid-package-names-like-base-util-or-common">https://dave.cheney.net/2019/01/08/avoid-package-names-like-base-util-or-common</a></p>
+
+
+  </main>
+
+<div class="post bg-white">
+    <script src="https://utteranc.es/client.js"
+          repo="sdgmf/sdgmf.github.io"
+          issue-term="pathname"
+          theme="github-light"
+          crossorigin="anonymous"
+          async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+</div>
+<footer class="tc center bt b--near-white pvx phm pax-m phxl-l pvx-l">
+        <small class="f5 mw7 db center phm lh-copy">
+          <nav>
+              <ul class="list pln">
+                  <li class="dib prm"><a href="https://www.github.com"><span class="js-geomicon geomicon blue" data-icon="github"></span></a></li>
+                  <li class="dib prm"><a href="https://www.twitter.com"><span class="js-geomicon geomicon blue" data-icon="twitter"></span></a></li>
+              </ul>
+              </nav>
+              Copyright-  2015
+        </small>
+    </footer>
+    <script src="http://d2v52k3cl9vedd.cloudfront.net/geomicons/0.2.0/geomicons.min.js.gz"></script>
+    <script>
+        var icons = document.querySelectorAll('.geomicon');
+        Geomicons.inject(icons);
+    </script>
+  </body>
+</html>
+
