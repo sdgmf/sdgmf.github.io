@@ -22,6 +22,10 @@ description: Golang项目示例
 
 Github源码[go-project-sample](http://github.com/sdgmf/go-project-sample)
 
+项目分为products、details、ratings、reviews四个微服务,依赖关系如下.
+
+![dependency](/images/goproject_dep.jpg)
+
 ## 快速开始
 
 ```bash
