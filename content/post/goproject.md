@@ -520,35 +520,35 @@ curl http://localhost:8080/product/5 输出:
 rpc error: code = Unknown desc = details grpc service get detail error: detail service get detail error: get product error[id=5]: record not found
 get rating error
 github.com/sdgmf/go-project-sample/internal/app/products/services.(*DefaultProductsService).Get
-     /Users/fengbin/code/go/go-project-sample/internal/app/products/services/products.go:50
+     /Users/xxx/code/go/go-project-sample/internal/app/products/services/products.go:50
 github.com/sdgmf/go-project-sample/internal/app/products/controllers.(*ProductsController).Get
-     /Users/fengbin/code/go/go-project-sample/internal/app/products/controllers/products.go:30
+     /Users/xxx/code/go/go-project-sample/internal/app/products/controllers/products.go:30
 github.com/gin-gonic/gin.(*Context).Next
-     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+     /Users/xxx/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
 github.com/opentracing-contrib/go-gin/ginhttp.Middleware.func4
-     /Users/fengbin/go/pkg/mod/github.com/opentracing-contrib/go-gin@v0.0.0-20190301172248-2e18f8b9c7d4/ginhttp/server.go:99
+     /Users/xxx/go/pkg/mod/github.com/opentracing-contrib/go-gin@v0.0.0-20190301172248-2e18f8b9c7d4/ginhttp/server.go:99
 github.com/gin-gonic/gin.(*Context).Next
-     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+     /Users/xxx/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
 github.com/sdgmf/go-project-sample/internal/pkg/transports/http/middlewares/ginprom.(*GinPrometheus).Middleware.func1
-     /Users/fengbin/code/go/go-project-sample/internal/pkg/transports/http/middlewares/ginprom/ginprom.go:105
+     /Users/xxx/code/go/go-project-sample/internal/pkg/transports/http/middlewares/ginprom/ginprom.go:105
 github.com/gin-gonic/gin.(*Context).Next
-     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+     /Users/xxx/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
 github.com/gin-contrib/zap.RecoveryWithZap.func1
-     /Users/fengbin/go/pkg/mod/github.com/gin-contrib/zap@v0.0.0-20190528085758-3cc18cd8fce3/zap.go:109
+     /Users/xxx/go/pkg/mod/github.com/gin-contrib/zap@v0.0.0-20190528085758-3cc18cd8fce3/zap.go:109
 github.com/gin-gonic/gin.(*Context).Next
-     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+     /Users/xxx/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
 github.com/gin-contrib/zap.Ginzap.func1
-     /Users/fengbin/go/pkg/mod/github.com/gin-contrib/zap@v0.0.0-20190528085758-3cc18cd8fce3/zap.go:32
+     /Users/xxx/go/pkg/mod/github.com/gin-contrib/zap@v0.0.0-20190528085758-3cc18cd8fce3/zap.go:32
 github.com/gin-gonic/gin.(*Context).Next
-     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+     /Users/xxx/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
 github.com/gin-gonic/gin.RecoveryWithWriter.func1
-     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/recovery.go:83
+     /Users/xxx/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/recovery.go:83
 github.com/gin-gonic/gin.(*Context).Next
-     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
+     /Users/xxx/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/context.go:124
 github.com/gin-gonic/gin.(*Engine).handleHTTPRequest
-     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/gin.go:389
+     /Users/xxx/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/gin.go:389
 github.com/gin-gonic/gin.(*Engine).ServeHTTP
-     /Users/fengbin/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/gin.go:351
+     /Users/xxx/go/pkg/mod/github.com/gin-gonic/gin@v1.4.0/gin.go:351
 net/http.serverHandler.ServeHTTP
      /usr/local/Cellar/go/1.12.6/libexec/src/net/http/server.go:2774
 net/http.(*conn).serve
@@ -1313,7 +1313,7 @@ func TestDetailsRepository_Get(t *testing.T) {
 go test -v ./internal/app/details/repositorys -f $(pwd)/configs/details.yml
 
 === RUN   TestDetailsRepository_Get
-use config file -> /Users/fengbin/code/go/go-project-sample/configs/details.yml
+use config file -> /Users/xxx/code/go/go-project-sample/configs/details.yml
 === RUN   TestDetailsRepository_Get/id=1
 === RUN   TestDetailsRepository_Get/id=2
 === RUN   TestDetailsRepository_Get/id=3
