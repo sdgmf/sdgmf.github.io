@@ -216,6 +216,7 @@ blockquote,
 <li>介绍Go开发应该遵守的规范</li>
 <li>介绍编程思想在go语言中的应用</li>
 <li>服务治理相关的框架、中间件介绍</li>
+<li>自动化生成监控和报警</li>
 </ol>
 
 <h2 id="示例项目">示例项目</h2>
@@ -237,6 +238,20 @@ blockquote,
 <li><strong>jaeger</strong>: <a href="http://localhost:16686/search">http://localhost:16686/search</a></li>
 <li><strong>Prometheus</strong>: <a href="http://localhost:9090/graph">http://localhost:9090/graph</a></li>
 </ul>
+
+<h2 id="预览">预览</h2>
+
+<p>Grafana Dashboard,可以自动生成!</p>
+
+<p><img src="/images/grafana_dashboard.jpg" alt="dashboard" /></p>
+
+<p><img src="/images/grafana_dashboard1.jpg" alt="dashboard1" /></p>
+
+<p>调用链跟踪</p>
+
+<p><img src="/images/jaeger.jpg" alt="jaeger" /></p>
+
+<p><img src="/images/jaeger1.jpg" alt="jaeger" /></p>
 
 <h2 id="包结构">包结构</h2>
 
@@ -1249,12 +1264,6 @@ dashboard.new(app, schemaVersion=16, tags=[&#39;go&#39;], editable=true, uid=app
 <p>调研grafana api</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -X DELETE --user admin:admin  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#e6db74">&#39;http://localhost:3000/api/dashboards/db/$$app&#39;</span>
 curl -x POST --user admin:admin  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> --data-binary <span style="color:#e6db74">&#34;@./grafana/dashboards-api/</span>$$<span style="color:#e6db74">app-api.json&#34;</span> http://localhost:3000/api/dashboards/db </code></pre></div>
-<p>dashboard预览</p>
-
-<p><img src="/images/grafana_dashboard.jpg" alt="dashboard" /></p>
-
-<p><img src="/images/grafana_dashboard1.jpg" alt="dashboard1" /></p>
-
 <h3 id="生成alermanager-告警">生成alermanager 告警</h3>
 
 <p>TODO</p>
