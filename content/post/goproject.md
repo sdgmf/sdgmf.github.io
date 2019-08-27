@@ -41,7 +41,7 @@ Github源码[go-project-sample](http://github.com/sdgmf/go-project-sample)
 * **jaeger**: http://localhost:16686/search
 * **Prometheus**: http://localhost:9090/graph 
 
-## 预览
+## 截图
 
 Grafana Dashboard,可以自动生成!
 
