@@ -17,6 +17,7 @@ description: Golang项目示例
 2. 介绍Go开发应该遵守的规范
 3. 介绍编程思想在go语言中的应用
 4. 服务治理相关的框架、中间件介绍
+5. 自动化生成监控和报警
 
 ## 示例项目
 
@@ -39,6 +40,20 @@ Github源码[go-project-sample](http://github.com/sdgmf/go-project-sample)
 * **grafana**: http://localhost:3000/ 
 * **jaeger**: http://localhost:16686/search
 * **Prometheus**: http://localhost:9090/graph 
+
+## 预览
+
+Grafana Dashboard,可以自动生成!
+
+![dashboard](/images/grafana_dashboard.jpg)
+
+![dashboard1](/images/grafana_dashboard1.jpg)
+
+调用链跟踪
+
+![jaeger](/images/jaeger.jpg)
+
+![jaeger](/images/jaeger1.jpg)
 
 ## 包结构
 
@@ -1127,11 +1142,7 @@ curl -X DELETE --user admin:admin  -H "Content-Type: application/json" 'http://l
 curl -x POST --user admin:admin  -H "Content-Type: application/json" --data-binary "@./grafana/dashboards-api/$$app-api.json" http://localhost:3000/api/dashboards/db 
 ```
 
-dashboard预览
 
-![dashboard](/images/grafana_dashboard.jpg)
-
-![dashboard1](/images/grafana_dashboard1.jpg)
 
 ### 生成alermanager 告警
 
