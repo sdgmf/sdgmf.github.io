@@ -1,7 +1,7 @@
 ---
 title: Golang微服务最佳实践
 date: 2019-07-24T15:16:41+08:00
-lastmod: 2019-07-24T15:16:41+08:00
+lastmod: 2019-08-28T15:16:41+08:00
 draft: false
 categories: ["golang"]
 tags: ["golang", "dependency-inject","unit-test","microservice","grpc"]
