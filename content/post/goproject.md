@@ -1,7 +1,7 @@
 ---
 title: Golang微服务最佳实践
 date: 2019-07-24T15:16:41+08:00
-lastmod: 2019-08-28T15:16:41+08:00
+lastmod: 2019-08-29T11:16:41+08:00
 draft: false
 categories: ["golang"]
 tags: ["golang", "dependency-inject","unit-test","microservice","grpc"]
@@ -32,6 +32,8 @@ Github源码[go-project-sample](http://github.com/sdgmf/go-project-sample)
 ```bash
     git clone https://github.com/sdgmf/go-project-sample.git
     cd go-project-sample
+    git submodule init
+    git submodule update
     make docker-compose
 ```
 
@@ -39,7 +41,7 @@ Github源码[go-project-sample](http://github.com/sdgmf/go-project-sample)
 * **consul**: http://localhost:8500/
 * **grafana**: http://localhost:3000/ 
 * **jaeger**: http://localhost:16686/search
-* **Prometheus**: http://localhost:9090/graph 
+* **Prometheus**: http://localhost:9090/graph
 
 ## 截图
 
