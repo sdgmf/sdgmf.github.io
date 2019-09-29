@@ -19,7 +19,7 @@ googleAnalytics="UA-144925501-1"
   post = "/:filename/"
 
 [params]
-  description = "Sdgmf 's Blog"
+  description = "Sdgmf's Blog"
   contentBackgroundColor = "#fff"
   contentTextColor = "#212529"
   contentLinkColor = "#007bff"

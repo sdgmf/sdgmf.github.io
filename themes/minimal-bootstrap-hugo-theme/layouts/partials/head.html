@@ -4,9 +4,7 @@
   
   {{ hugo.Generator }}
 
-  {{ with .Site.Params.description }}
-  <meta name="description" content="{{ . }}">
-  {{ end }}
+  <meta name="description" content="{{ .Description }}">
 
   {{ $appleTouchIcon := "apple-touch-icon.png" }}
   <link rel="apple-touch-icon" sizes="180x180" href="{{ $appleTouchIcon | absURL }}">
