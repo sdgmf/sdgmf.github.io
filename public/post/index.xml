@@ -5,22 +5,22 @@
     <link>https://sdgmf.github.io/post/</link>
     <description>Recent content in Posts on Sdgmf &#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Mon, 12 Aug 2019 21:19:39 +0800</lastBuildDate>
+    <lastBuildDate>Wed, 14 Aug 2019 17:21:46 +0800</lastBuildDate>
     
 	<atom:link href="https://sdgmf.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Golang最佳实践(基础篇)-命名</title>
-      <link>https://sdgmf.github.io/post/go-best-practice-name/</link>
-      <pubDate>Mon, 12 Aug 2019 21:19:39 +0800</pubDate>
+      <link>https://sdgmf.github.io/go-best-practice-name/</link>
+      <pubDate>Wed, 14 Aug 2019 17:21:46 +0800</pubDate>
       
-      <guid>https://sdgmf.github.io/post/go-best-practice-name/</guid>
-      <description>编写好的Go程序，理解它的特性和风格是非常重要,了解Go语言编程中已有的约定也非常重要. 良好的命名和统一的编程风格可以让Go程序员容易理解你编写的程序。
+      <guid>https://sdgmf.github.io/go-best-practice-name/</guid>
+      <description>良好的命名和统一的编程风格可以让Go程序员容易理解你编写的程序。
 基本规则 Go约定使用MixedCaps或者mixedCaps的形式，而不是下划线来书写多个单词的名字。
 项目名(仓库名)  项目名(仓库名）的命名可以使用字母、数字。 多个单词建议采用中划线分隔，目前github中大多数项目都是使用用中划线，不建议采用驼峰式分隔，不要使用下划线(kubernetes中的组件名称不允许使用下划线) 命名可以是对项目功能的描述；也可以是一个代号（如神话人物的名字，或者希腊语）,适合采用代号的项目有两种，一种是公司的基础组件或者开源项目，一般这种项目都有详细的文档， 项目名（仓库名）要尽量避免重复，如果可能重复要添加必要的前缀或者后缀做区分。 命名尽量在三个单词以内。  正确:
 user、user-api、user-service,product、product-search、redis-go,druid、zeus、kubernetes. 错误:
-user_api、Product 包名  简短，简明，能引起共鸣的。 程序包使用小写，一个单词的名字。 其不需要在所有源代码中是唯一的。 不要使用import . &amp;ldquo;xxx&amp;rdquo; 导入程序包。 包内struct、function不要带入包名。 包名和目录名保持一致。 避免使用诸如base，util或common之类的包名称,按照提供的内容命名您的包，而不是它们包含的包。  Get方法  Go不提供对Get方法和Set方法的自动支持。你自己提供Get方法和Set方法是没有错的，通常这么做是合适的。但是，在Get方法的名字中加上Get，是不符合语言习惯的，并且也没有必要。如果你有一个域叫做owner（小写，不被导出），则Get方法应该叫做Owner（大写，被导出），而不是GetOwner。对于要导出的，使用大写名字，提供了区别域和方法的钩子。Set方法，如果需要，则可以叫做SetOwner。这些名字在实际中都很好读:
+user_api、Product 包名  包名应该尽量简短，简明,一个单词来命名,不要用多个单词命名。 其不需要在所有源代码中是唯一的。 不要使用import . &amp;ldquo;xxx&amp;rdquo; 导入程序包。 包内struct、function不要带入包名。 包名和目录名保持一致。 避免使用诸如base，util或common之类的包名称,按照提供的内容命名您的包，而不是它们包含的包。  Get方法  Go不提供对Get方法和Set方法的自动支持。你自己提供Get方法和Set方法是没有错的，通常这么做是合适的。但是，在Get方法的名字中加上Get，是不符合语言习惯的，并且也没有必要。如果你有一个域叫做owner（小写，不被导出），则Get方法应该叫做Owner（大写，被导出），而不是GetOwner。对于要导出的，使用大写名字，提供了区别域和方法的钩子。Set方法，如果需要，则可以叫做SetOwner。这些名字在实际中都很好读:
  owner := obj.Owner() if owner != user { obj.SetOwner(user) } 变量名  作用域越小，命名应该越简短。如在for循环内部用i表示index。 变量名不应该包含类型，变量的名称应描述其内容，而不是内容的类型. struct 的行为方法，命名不要采用self,this等方式的命名。  接口名  按照约定，单个方法的接口使用方法名加上“er”后缀来命名，或者类似的修改来构造一个施动者名词：Reader，Writer，Formatter，CloseNotifier等。 有许多这样的名字，最有效的方式就是尊重它们，以及它们所体现的函数名字。Read，Write，Close，Flush，String等，都具有规范的签名和含义。为了避免混淆，不要为你的方法使用这些名字，除非其具有相同的签名和含义。反过来讲，如果你的类型实现了一个和众所周知的类型具有相同含义的方法，那么就使用相同的名字和签名；例如，为你的字符串转换方法起名为String，而不是ToString。
  New方法  当包里只有一个对象时，比如gin包，New方法可以直接写成gin.New(),而不是gin.NewEngine()  Constant  建议采用驼峰式命名，不要采用全部大写，全部大写加下划线的方式很难阅读。  参考 https://golang.org/doc/effective_go.html
 https://www.kancloud.cn/kancloud/effective
@@ -29,12 +29,18 @@ https://dave.cheney.net/2019/01/08/avoid-package-names-like-base-util-or-common<
     </item>
     
     <item>
-      <title>Golang微服务实践</title>
-      <link>https://sdgmf.github.io/post/goproject/</link>
+      <title>Golang微服务最佳实践</title>
+      <link>https://sdgmf.github.io/goproject/</link>
       <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
       
-      <guid>https://sdgmf.github.io/post/goproject/</guid>
-      <description>&lt;p&gt;本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、框架选择等方面介绍Go语言项目的开发经验.&lt;/p&gt;</description>
+      <guid>https://sdgmf.github.io/goproject/</guid>
+      <description>通过一个完整的项目的示例，从项目的结构、分层思想、依赖注入、错误处理、单元测试、服务治理、框架选择等方面介绍Go语言项目的最佳实践经验. 项目分为products、details、ratings、reviews四个微服务,依赖关系如下.
+准备 安装docker,go,jsonnet
+快速开始 git clone https://github.com/sdgmf/go-project-sample.git cd go-project-sample git submodule init git submodule update make docker-compose  访问接口： http://localhost:8080/product/1 consul: http://localhost:8500/ grafana: http://localhost:3000/ jaeger: http://localhost:16686/search Prometheus: http://localhost:9090/graph  截图 Grafana Dashboard,可以自动生成!
+Prometheus Alert 监控告警,自动生成！
+调用链跟踪
+包结构 关于golang项目的包结构，Dave Chaney博客《Five suggestions for setting up a Go project》里讨论了package和command的包设计建议，还有一个社区普遍认可的包结构规范project-layout。在这两个两篇文章的知道下，结合常见的互联网微服务项目，我又细化了如下的项目结构。
+. ├── api │ └── proto ├── build │ ├── details │ ├── products │ ├── ratings │ └── reviews ├── cmd │ ├── details │ ├── products │ ├── ratings │ └── reviews ├── configs ├── deployments ├── dist ├── internal │ ├── app │ │ ├── details │ │ │ ├── controllers │ │ │ ├── grpcservers │ │ │ ├── repositorys │ │ │ └── services │ │ ├── products │ │ │ ├── controllers │ │ │ ├── grpcclients │ │ │ └── services │ │ ├── ratings │ │ │ ├── controllers │ │ │ ├── grpcservers │ │ │ ├── repositorys │ │ │ └── services │ │ └── reviews │ │ ├── controllers │ │ ├── grpcservers │ │ ├── repositorys │ │ └── services │ └── pkg │ ├── app │ ├── config │ ├── consul │ ├── database │ ├── jaeger │ ├── log │ ├── models │ ├── transports │ │ ├── grpc │ │ └── http │ │ └── middlewares │ │ └── ginprom │ └── utils │ └── netutil ├── mocks └── scripts /cmd 同project-layout</description>
     </item>
     
   </channel>

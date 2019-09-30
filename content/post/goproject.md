@@ -8,24 +8,14 @@ tags: ["golang", "微服务"]
 description: 本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、服务治理、框架选择等方面介绍Golang微服务最佳实践.
 ---
 
-本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、服务治理、框架选择等方面介绍Golang微服务最佳实践.
-<!--more-->
-
-## 目的
-
-1. 提供一个完整的go语言项目示例
-2. 介绍Go开发应该遵守的规范
-3. 介绍编程思想在go语言中的应用
-4. 服务治理相关的框架、中间件介绍
-5. 自动化生成监控和报警
-
-## 示例项目
-
-Github源码[go-project-sample](http://github.com/sdgmf/go-project-sample)
-
+通过一个完整的项目的示例，从项目的结构、分层思想、依赖注入、错误处理、单元测试、服务治理、框架选择等方面介绍Go语言项目的最佳实践经验.
 项目分为products、details、ratings、reviews四个微服务,依赖关系如下.
 
-![dependency](/images/goproject_dep.jpg)
+![dependency](https://sdgmf.github.io/images/goproject_dep.jpg)
+
+## 准备
+
+安装docker,go,[jsonnet](https://jsonnet.org/)
 
 ## 快速开始
 
@@ -51,11 +41,19 @@ Grafana Dashboard,可以自动生成!
 
 ![dashboard1](/images/grafana_dashboard1.jpg)
 
+Prometheus Alert 监控告警,自动生成！
+
+![alert](/images/alert.jpg)
+
+![alert](/images/alert1.jpg)
+
 调用链跟踪
 
 ![jaeger](/images/jaeger.jpg)
 
 ![jaeger](/images/jaeger1.jpg)
+
+
 
 ## 包结构
 
