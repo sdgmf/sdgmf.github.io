@@ -16,7 +16,13 @@
       <pubDate>Wed, 24 Jul 2019 15:16:41 +0800</pubDate>
       
       <guid>https://sdgmf.github.io/goproject/</guid>
-      <description>&lt;p&gt;本文通过一个完整的项目的示例，从Golang项目的结构、分层思想、依赖注入、错误处理、单元测试、服务治理、框架选择等方面介绍Golang微服务最佳实践.&lt;/p&gt;</description>
+      <description>通过一个完整的项目的示例，从项目的结构、分层思想、依赖注入、错误处理、单元测试、服务治理、框架选择等方面介绍Go语言项目的最佳实践经验. 项目分为products、details、ratings、reviews四个微服务,依赖关系如下.
+准备 安装docker,go,jsonnet
+快速开始 git clone https://github.com/sdgmf/go-project-sample.git cd go-project-sample git submodule init git submodule update make docker-compose  访问接口： http://localhost:8080/product/1 consul: http://localhost:8500/ grafana: http://localhost:3000/ jaeger: http://localhost:16686/search Prometheus: http://localhost:9090/graph  截图 Grafana Dashboard,可以自动生成!
+Prometheus Alert 监控告警,自动生成！
+调用链跟踪
+包结构 关于golang项目的包结构，Dave Chaney博客《Five suggestions for setting up a Go project》里讨论了package和command的包设计建议，还有一个社区普遍认可的包结构规范project-layout。在这两个两篇文章的知道下，结合常见的互联网微服务项目，我又细化了如下的项目结构。
+. ├── api │ └── proto ├── build │ ├── details │ ├── products │ ├── ratings │ └── reviews ├── cmd │ ├── details │ ├── products │ ├── ratings │ └── reviews ├── configs ├── deployments ├── dist ├── internal │ ├── app │ │ ├── details │ │ │ ├── controllers │ │ │ ├── grpcservers │ │ │ ├── repositorys │ │ │ └── services │ │ ├── products │ │ │ ├── controllers │ │ │ ├── grpcclients │ │ │ └── services │ │ ├── ratings │ │ │ ├── controllers │ │ │ ├── grpcservers │ │ │ ├── repositorys │ │ │ └── services │ │ └── reviews │ │ ├── controllers │ │ ├── grpcservers │ │ ├── repositorys │ │ └── services │ └── pkg │ ├── app │ ├── config │ ├── consul │ ├── database │ ├── jaeger │ ├── log │ ├── models │ ├── transports │ │ ├── grpc │ │ └── http │ │ └── middlewares │ │ └── ginprom │ └── utils │ └── netutil ├── mocks └── scripts /cmd 同project-layout</description>
     </item>
     
   </channel>
